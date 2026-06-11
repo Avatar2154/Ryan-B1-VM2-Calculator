@@ -3,7 +3,10 @@ import numpy as np
 
 st.set_page_config(page_title="NZBC B1/VM2 Advanced Foundation Tool", page_icon="🇳🇿", layout="wide")
 
-st.title("Ryan's B1/VM2 Bearing Capacity Calculator")
+st.title("🇳🇿 Professional B1/VM2 Bearing Capacity Calculator")
+# Added property warning notice subtitle below the main banner
+st.markdown("⚠️ *This app is the property of Ryan. No unauthorised use accepted.*")
+
 st.markdown("""
 Adheres to the **New Zealand Building Code Verification Method B1/VM2**. 
 Automates effective area eccentricities, load orientations, and short/long-term soil behaviors.
@@ -124,12 +127,11 @@ else:
 denominator_c = A_prime * c_calc + V_star * np.tan(phi_rad)
 
 if phi_deg == 0:
-    # pure undrained clay
     lambda_iq = 1.0
     lambda_igamma = 1.0
     lambda_ic = 1.0 - (H_star / (5.14 * A_prime * c_calc)) if (A_prime * c_calc) > 0 else 0.0
+    exponent_m = 0.0
 else:
-    # Assign exponent based on user load-direction input
     if h_direction == "Parallel to Width (B)":
         exponent_m = (2.0 + (B_prime / L_prime)) / (1.0 + (B_prime / L_prime))
     else:
@@ -151,7 +153,7 @@ if phi_deg == 0:
 else:
     lambda_cs = 1.0 + (B_prime / L_prime) * (Nq / Nc) * (lambda_iq / lambda_ic) if lambda_ic > 0 else 1.0
     lambda_qs = 1.0 + (B_prime / L_prime) * np.tan(phi_rad) * lambda_iq
-    lambda_gammas = max(0.6, 1.0 - 0.4 * (B_prime / L_prime) * (lambda_igamma / lambda_qs) if lambda_qs > 0 else 1.0)
+    lambda_gammas = max(0.6, 1.0 - 0.4 * (B_prime / L_prime) * (lambda_gamma_term := lambda_igamma / lambda_qs if lambda_qs > 0 else 1.0))
 
 # 6. Foundation Embedment Depth Modifiers
 if Df == 0:
@@ -175,36 +177,49 @@ qd = qu * phi_g
 
 # --- Results Presentation Layer ---
 st.write("---")
-st.subheader("📊 Ultimate Limit State Structural Results")
+st.subheader("📊 Ultimate Geotechnical Capacity Results")
 
 res_col1, res_col2, res_col3 = st.columns(3)
-res_col1.metric(label="Ultimate Capacity (q_u)", value=f"{qu:.1f} kPa")
-res_col2.metric(label="Geotechnical Reduction (𝜙_g)", value=f"{phi_g:.2f}")
-res_col3.metric(label="Design Capacity (q_d)", value=f"{qd:.1f} kPa")
+res_col1.metric(label="Ultimate Geotechnical Capacity (q_u)", value=f"{qu:.1f} kPa")
+res_col2.metric(label="Geotechnical Reduction Factor (𝜙_g)", value=f"{phi_g:.2f}")
+res_col3.metric(label="Design Geotechnical Capacity (q_d)", value=f"{qd:.1f} kPa")
 
-# Geotechnical Dimensional Audit Box
+# Interactive Full Calculation Equation Breakdowns
 st.write("---")
-st.subheader("📐 Geotechnical Dimensional & Factor Audit")
+with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-by-Step Multiplication)"):
+    st.markdown("**Governing Ultimate Capacity Equation ($q_u$):**")
+    st.latex(r"q_u = (cdot N_cdot \lambda_{cs}dot \lambda_{cd}dot \lambda_{ic}) + (qdot N_qdot \lambda_{qs}dot \lambda_{qd}dot \lambda_{iq}) + (0.5dot \gamma'dot B'dot N_\gammadot \lambda_{\gamma s}dot \lambda_{\gamma d}dot \lambda_{i\gamma})")
+    
+    st.markdown("**Your Values Multiplied Out:**")
+    st.latex(f"q_u = ({c_calc:.2f}dot {Nc:.2f}dot {lambda_cs:.2f}dot {lambda_cd:.2f}dot {lambda_ic:.2f}) + ({q_surcharge:.2f}dot {Nq:.2f}dot {lambda_qs:.2f}dot {lambda_qd:.2f}dot {lambda_iq:.2f}) + (0.5dot {gamma_prime:.2f}dot {B_prime:.2f}dot {Ngamma:.2f}dot {lambda_gammas:.2f}dot {lambda_gammad:.2f}dot {lambda_igamma:.2f})")
+    
+    st.markdown("**Calculated Partial Terms:**")
+    st.write(f"*   **Cohesion Term:** {term1:.2f} kPa")
+    st.write(f"*   **Surcharge Term ($q$):** {term2:.2f} kPa")
+    st.write(f"*   **Soil Weight Term ($\gamma'$):** {term3:.2f} kPa")
+    st.write(f"🚀 **Summed Ultimate Capacity ($q_u$):** {qu:.2f} kPa")
+    
+    st.markdown("**Design Capacity Verification ($q_d$):**")
+    st.latex(r"q_d = q_udot \phi_g")
+    st.latex(f"q_d = {qu:.2f}dot {phi_g:.2f} = {qd:.2f} \text{{ kPa}}")
+
+# Consolidated Structural Audit Panel
+st.write("---")
+st.subheader("📊 Bearing Capacity Factors")
 audit_col1, audit_col2, audit_col3 = st.columns(3)
 
 with audit_col1:
-    with st.expander("Effective Footing Footprint (Meyerhof Method)"):
-        st.write(f"**Eccentricity width (e_B):** {e_B:.3f} m")
-        st.write(f"**Eccentricity length (e_L):** {e_L:.3f} m")
-        st.write(f"**Effective Width (B'):** {B_prime:.3f} m (Gross: {B_raw}m)")
-        st.write(f"**Effective Length (L'):** {L_prime:.3f} m (Gross: {L_raw}m)")
-        st.write(f"**Effective Area (A'):** {A_prime:.3f} m²")
+    st.markdown("**Classical Factors ($N$):**")
+    st.write(f"*   **$N_c$ (Cohesion Multiplier):** {Nc:.3f}")
+    st.write(f"*   **$N_q$ (Surcharge Multiplier):** {Nq:.3f}")
+    st.write(f"*   **$N_\gamma$ (Self-Weight Multiplier):** {Ngamma:.3f}")
+    
+    st.markdown("**Effective Footprint (Meyerhof):**")
+    st.write(f"*   **Effective Width ($B'$):** {B_prime:.3f} m (Gross: {B_raw}m)")
+    st.write(f"*   **Effective Length ($L'$):** {L_prime:.3f} m (Gross: {L_raw}m)")
 
 with audit_col2:
-    with st.expander("Load Inclination Multipliers"):
-        st.write(f"**Load Exponent (m):** {exponent_m:.3f}" if phi_deg > 0 else "**Load Exponent (m):** N/A (Clay case)")
-        st.write(f"**λ_ic (Cohesion):** {lambda_ic:.3f}")
-        st.write(f"**λ_iq (Surcharge):** {lambda_iq:.3f}")
-        st.write(f"**λ_iγ (Soil Weight):** {lambda_igamma:.3f}")
-
-with audit_col3:
-    with st.expander("Shape & Depth Modifiers"):
-        st.write("**Shape (λ_s):**")
-        st.write(f"λ_cs = {lambda_cs:.2f} | λ_qs = {lambda_qs:.2f} | λ_γs = {lambda_gammas:.2f}")
-        st.write("**Depth (λ_d):**")
-        st.write(f"λ_cd = {lambda_cd:.2f} | λ_qd = {lambda_qd:.2f} | λ_γd = {lambda_gammad:.2f}")
+    st.markdown("**Geometry Modifying Factors ($\lambda$):**")
+    st.write(f"*   **$\lambda_{cs}$ (Cohesion Shape):** {lambda_cs:.3f}")
+    st.write(f"*   **$\lambda_{qs}$ (Surcharge Shape):** {lambda_qs:.3f}")
+    st.write(f"*   **$\lambda_{\gamma s}$ (Weight Shape):** {lambda_gammas:.3f}")
