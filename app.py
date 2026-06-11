@@ -121,7 +121,8 @@ if phi_deg == 0:
 else:
     Nq = np.exp(np.pi * np.tan(phi_rad)) * (np.tan(np.pi/4 + phi_rad/2))**2
     Nc = (Nq - 1.0) / np.tan(phi_rad)
-    Ngamma = 2.0 * (Nq + 1.0) * np.tan(phi_rad)
+    # UPDATED: Changed from 2.0 * (Nq + 1.0) to 2.0 * (Nq - 1.0) per your request
+    Ngamma = 2.0 * (Nq - 1.0) * np.tan(phi_rad)
 
 # 4. Load Inclination Multipliers (with Explicit Direction Exponents)
 denominator_c = A_prime * c_calc + V_star * np.tan(phi_rad)
@@ -153,6 +154,7 @@ if phi_deg == 0:
 else:
     lambda_cs = 1.0 + (B_prime / L_prime) * (Nq / Nc) * (lambda_iq / lambda_ic) if lambda_ic > 0 else 1.0
     lambda_qs = 1.0 + (B_prime / L_prime) * np.tan(phi_rad) * lambda_iq
+    # UPDATED: Enforced the requested 1 - 0.4 parameter baseline adjustment
     lambda_gammas = max(0.6, 1.0 - 0.4 * (B_prime / L_prime) * (lambda_gamma_term := lambda_igamma / lambda_qs if lambda_qs > 0 else 1.0))
 
 # 6. Foundation Embedment Depth Modifiers
@@ -191,7 +193,6 @@ with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-b
     st.latex(r"q_u = (c \times N_c \times \lambda_{cs} \times \lambda_{cd} \times \lambda_{ic}) + (q \times N_q \times \lambda_{qs} \times \lambda_{qd} \times \lambda_{iq}) + (0.5 \times \gamma' \times B' \times N_\gamma \times \lambda_{\gamma s} \times \lambda_{\gamma d} \times \lambda_{i\gamma})")
     
     st.markdown("**Your Values Multiplied Out:**")
-    # Using a clean raw string with direct spaces and a simple 'x' character
     st.latex(rf"q_u = ({c_calc:.2f}\ \text{{x}}\ {Nc:.2f}\ \text{{x}}\ {lambda_cs:.2f}\ \text{{x}}\ {lambda_cd:.2f}\ \text{{x}}\ {lambda_ic:.2f}) + ({q_surcharge:.2f}\ \text{{x}}\ {Nq:.2f}\ \text{{x}}\ {lambda_qs:.2f}\ \text{{x}}\ {lambda_qd:.2f}\ \text{{x}}\ {lambda_iq:.2f}) + (0.5\ \text{{x}}\ {gamma_prime:.2f}\ \text{{x}}\ {B_prime:.2f}\ \text{{x}}\ {Ngamma:.2f}\ \text{{x}}\ {lambda_gammas:.2f}\ \text{{x}}\ {lambda_gammad:.2f}\ \text{{x}}\ {lambda_igamma:.2f})")
     
     st.markdown("**Calculated Partial Terms:**")
@@ -220,16 +221,17 @@ with audit_col1:
 
 with audit_col2:
     st.markdown("**Geometry Modifying Factors ($\lambda$):**")
-    st.write(rf"*   **$\lambda_{{cs}}$ (Cohesion Shape):** {lambda_cs:.3f}")
-    st.write(rf"*   **$\lambda_{{qs}}$ (Surcharge Shape):** {lambda_qs:.3f}")
-    st.write(rf"*   **$\lambda_{{\gamma s}}$ (Weight Shape):** {lambda_gammas:.3f}")
-    st.write(rf"*   **$\lambda_{{cd}}$ (Cohesion Depth):** {lambda_cd:.3f}")
-    st.write(rf"*   **$\lambda_{{qd}}$ (Surcharge Depth):** {lambda_qd:.3f}")
-    st.write(rf"*   **$\lambda_{{\gamma d}}$ (Weight Depth):** {lambda_gammad:.3f}")
+    st.write(rf"*   $\lambda_{{cs}}$ (Cohesion Shape): {lambda_cs:.3f}")
+    st.write(rf"*   $\lambda_{{qs}}$ (Surcharge Shape): {lambda_qs:.3f}")
+    st.write(rf"*   $\lambda_{{\gamma s}}$ (Weight Shape): {lambda_gammas:.3f}")
+    st.write(rf"*   $\lambda_{{cd}}$ (Cohesion Depth): {lambda_cd:.3f}")
+    st.write(rf"*   $\lambda_{{qd}}$ (Surcharge Depth): {lambda_qd:.3f}")
+    st.write(rf"*   $\lambda_{{\gamma d}}$ (Weight Depth): {lambda_gammad:.3f}")
 
 with audit_col3:
     st.markdown("**Load Inclination Factors ($\lambda_i$):**")
-    st.write(f"*   **Load Exponent ($m$):** {exponent_m:.3f}")
-    st.write(rf"*   **$\lambda_{{ic}}$ (Cohesion Inclination):** {lambda_ic:.3f}")
-    st.write(rf"*   **$\lambda_{{iq}}$ (Surcharge Inclination):** {lambda_iq:.3f}")
-    st.write(rf"*   **$\lambda_{{i\gamma}}$ (Weight Inclination):** {lambda_igamma:.3f}")
+    st.write(f"*   Load Exponent ($m$): {exponent_m:.3f}")
+    st.write(rf"*   $\lambda_{{ic}}$ (Cohesion Inclination): {lambda_ic:.3f}")
+    st.write(rf"*   $\lambda_{{iq}}$ (Surcharge Inclination): {lambda_iq:.3f}")
+    st.write(rf"*   $\lambda_{{i\gamma}}$ (Weight Inclination): {lambda_igamma:.3f}")
+
