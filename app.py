@@ -151,7 +151,7 @@ if phi_deg == 0:
 else:
     lambda_cs = 1.0 + (B_prime / L_prime) * (Nq / Nc) * (lambda_iq / lambda_ic) if lambda_ic > 0 else 1.0
     lambda_qs = 1.0 + (B_prime / L_prime) * np.tan(phi_rad) * lambda_iq
-    lambda_gammas = max(0.6, 1.0 - 0.4 * (B_prime / L_prime) * (lambda_gamma / lambda_qs) if lambda_qs > 0 else 1.0)
+    lambda_gammas = max(0.6, 1.0 - 0.4 * (B_prime / L_prime) * (lambda_igamma / lambda_qs) if lambda_qs > 0 else 1.0)
 
 # 6. Foundation Embedment Depth Modifiers
 if Df == 0:
