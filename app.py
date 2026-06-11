@@ -118,10 +118,12 @@ if phi_deg == 0:
     Nq = 1.0
     Ngamma = 0.0
 else:
+    # RESTORED: Nq is now cleanly calculated on its own without modification
     Nq = np.exp(np.pi * np.tan(phi_rad)) * (np.tan(np.pi/4 + phi_rad/2))**2
     Nc = (Nq - 1.0) / np.tan(phi_rad)
-    # Strictly applying requested update: 2 x (Nq - 1) x tan(phi)
+    # RETAINED: Ngamma stays at your requested 2 * (Nq - 1) multiplier configuration
     Ngamma = 2.0 * (Nq - 1.0) * np.tan(phi_rad)
+
 
 # Surcharge factor running on net framework
 Nq_effective = Nq - 1.0
