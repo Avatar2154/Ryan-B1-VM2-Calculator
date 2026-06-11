@@ -4,7 +4,7 @@ import numpy as np
 st.set_page_config(page_title="NZBC B1/VM2 Advanced Foundation Tool", page_icon="🇳🇿", layout="wide")
 
 st.title("🇳🇿 Professional B1/VM2 Bearing Capacity Calculator")
-# Added property warning notice subtitle below the main banner
+# Property warning notice subtitle
 st.markdown("⚠️ *This app is the property of Ryan. No unauthorised use accepted.*")
 
 st.markdown("""
