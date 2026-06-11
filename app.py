@@ -188,11 +188,11 @@ res_col3.metric(label="Design Geotechnical Capacity (q_d)", value=f"{qd:.1f} kPa
 st.write("---")
 with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-by-Step Multiplication)"):
     st.markdown("**Governing Ultimate Capacity Equation ($q_u$):**")
-    # Swappeddot out for \times for clean cross-multiplication clarity
     st.latex(r"q_u = (c \times N_c \times \lambda_{cs} \times \lambda_{cd} \times \lambda_{ic}) + (q \times N_q \times \lambda_{qs} \times \lambda_{qd} \times \lambda_{iq}) + (0.5 \times \gamma' \times B' \times N_\gamma \times \lambda_{\gamma s} \times \lambda_{\gamma d} \times \lambda_{i\gamma})")
     
     st.markdown("**Your Values Multiplied Out:**")
-    st.latex(f"q_u = ({c_calc:.2f} \times {Nc:.2f} \times {lambda_cs:.2f} \times {lambda_cd:.2f} \times {lambda_ic:.2f}) + ({q_surcharge:.2f} \times {Nq:.2f} \times {lambda_qs:.2f} \times {lambda_qd:.2f} \times {lambda_iq:.2f}) + (0.5 \times {gamma_prime:.2f} \times {B_prime:.2f} \times {Ngamma:.2f} \times {lambda_gammas:.2f} \times {lambda_gammad:.2f} \times {lambda_igamma:.2f})")
+    # Swapped LaTeX \times out for plain text "x" dividers
+    st.latex(f"q_u = ({c_calc:.2f}text{{ x }} {Nc:.2f}text{{ x }} {lambda_cs:.2f}text{{ x }} {lambda_cd:.2f}text{{ x }} {lambda_ic:.2f}) + ({q_surcharge:.2f}text{{ x }} {Nq:.2f}text{{ x }} {lambda_qs:.2f}text{{ x }} {lambda_qd:.2f}text{{ x }} {lambda_iq:.2f}) + (0.5text{{ x }} {gamma_prime:.2f}text{{ x }} {B_prime:.2f}text{{ x }} {Ngamma:.2f}text{{ x }} {lambda_gammas:.2f}text{{ x }} {lambda_gammad:.2f}text{{ x }} {lambda_igamma:.2f})")
     
     st.markdown("**Calculated Partial Terms:**")
     st.write(f"*   **Cohesion Term:** {term1:.2f} kPa")
@@ -201,8 +201,8 @@ with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-b
     st.write(f"🚀 **Summed Ultimate Capacity ($q_u$):** {qu:.2f} kPa")
     
     st.markdown("**Design Capacity Verification ($q_d$):**")
-    st.latex(r"q_d = q_u \times \phi_g")
-    st.latex(f"q_d = {qu:.2f} \times {phi_g:.2f} = {qd:.2f} \text{{ kPa}}")
+    st.latex(f"q_d = {qu:.2f}text{{ x }} {phi_g:.2f} = {qd:.2f}text{{ kPa}}")
+
 
 # Consolidated Structural Audit Panel
 st.write("---")
