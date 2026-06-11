@@ -155,8 +155,10 @@ if phi_deg == 0:
 else:
     lambda_cs = 1.0 + (B_prime / L_prime) * (Nq / Nc) * (lambda_iq / lambda_ic) if lambda_ic > 0 else 1.0
     lambda_qs = 1.0 + (B_prime / L_prime) * np.tan(phi_rad) * lambda_iq
-    # CONFIGURATION FIX: Uses the requested 1 - 0.4 parameter baseline adjustment
-    lambda_gammas = max(0.6, 1.0 - 0.4 * (B_prime / L_prime) * (lambda_gamma_term := lambda_igamma / lambda_qs if lambda_qs > 0 else 1.0))
+    
+    # CORRECTED CORE MATH: Changed the baseline multiplier reduction constant directly to 0.4
+    lambda_gammas = max(0.6, 1.0 - 0.4 * (B_prime / L_prime))
+
 
 # 6. Foundation Embedment Depth Modifiers
 if Df == 0:
