@@ -215,12 +215,13 @@ with audit_col1:
 
 with audit_col2:
     st.markdown("**Geometry Modifying Factors ($\lambda$):**")
-    st.write(rf"*   **$\lambda_{{cs}}$ (Cohesion Shape):** {lambda_cs:.3f}")
-    st.write(rf"*   **$\lambda_{{qs}}$ (Surcharge Shape):** {lambda_qs:.3f}")
-    st.write(rf"*   **$\lambda_{{\gamma s}}$ (Weight Shape - Fixed to $1 - 0.4times (B'/L')$):** {lambda_gammas:.3f}")
-    st.write(rf"*   **$\lambda_{{cd}}$ (Cohesion Depth):** {lambda_cd:.3f}")
-    st.write(rf"*   **$\lambda_{{qd}}$ (Surcharge Depth):** {lambda_qd:.3f}")
-    st.write(rf"*   **$\lambda_{{\gamma d}}$ (Weight Depth):** {lambda_gammad:.3f}")
+    st.write(rf"*   $\lambda_{{cs}}$ (Cohesion Shape): {lambda_cs:.3f}")
+    st.write(rf"*   $\lambda_{{qs}}$ (Surcharge Shape): {lambda_qs:.3f}")
+    st.write(rf"*   $\lambda_{{\gamma s}}$ (Soil Weight Modifier): {lambda_gammas:.3f}")
+    st.write(rf"*   $\lambda_{{cd}}$ (Cohesion Depth): {lambda_cd:.3f}")
+    st.write(rf"*   $\lambda_{{qd}}$ (Surcharge Depth): {lambda_qd:.3f}")
+    st.write(rf"*   $\lambda_{{\gamma d}}$ (Weight Depth): {lambda_gammad:.3f}")
+
 
 with audit_col3:
     st.markdown("**Load Inclination Factors ($\lambda_i$):**")
