@@ -191,8 +191,8 @@ with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-b
     st.latex(r"q_u = (c \times N_c \times \lambda_{cs} \times \lambda_{cd} \times \lambda_{ic}) + (q \times N_q \times \lambda_{qs} \times \lambda_{qd} \times \lambda_{iq}) + (0.5 \times \gamma' \times B' \times N_\gamma \times \lambda_{\gamma s} \times \lambda_{\gamma d} \times \lambda_{i\gamma})")
     
     st.markdown("**Your Values Multiplied Out:**")
-    # Swapped LaTeX \times out for plain text "x" dividers
-    st.latex(f"q_u = ({c_calc:.2f}text{{ x }} {Nc:.2f}text{{ x }} {lambda_cs:.2f}text{{ x }} {lambda_cd:.2f}text{{ x }} {lambda_ic:.2f}) + ({q_surcharge:.2f}text{{ x }} {Nq:.2f}text{{ x }} {lambda_qs:.2f}text{{ x }} {lambda_qd:.2f}text{{ x }} {lambda_iq:.2f}) + (0.5text{{ x }} {gamma_prime:.2f}text{{ x }} {B_prime:.2f}text{{ x }} {Ngamma:.2f}text{{ x }} {lambda_gammas:.2f}text{{ x }} {lambda_gammad:.2f}text{{ x }} {lambda_igamma:.2f})")
+    # Using a clean raw string with direct spaces and a simple 'x' character
+    st.latex(rf"q_u = ({c_calc:.2f}\ \text{{x}}\ {Nc:.2f}\ \text{{x}}\ {lambda_cs:.2f}\ \text{{x}}\ {lambda_cd:.2f}\ \text{{x}}\ {lambda_ic:.2f}) + ({q_surcharge:.2f}\ \text{{x}}\ {Nq:.2f}\ \text{{x}}\ {lambda_qs:.2f}\ \text{{x}}\ {lambda_qd:.2f}\ \text{{x}}\ {lambda_iq:.2f}) + (0.5\ \text{{x}}\ {gamma_prime:.2f}\ \text{{x}}\ {B_prime:.2f}\ \text{{x}}\ {Ngamma:.2f}\ \text{{x}}\ {lambda_gammas:.2f}\ \text{{x}}\ {lambda_gammad:.2f}\ \text{{x}}\ {lambda_igamma:.2f})")
     
     st.markdown("**Calculated Partial Terms:**")
     st.write(f"*   **Cohesion Term:** {term1:.2f} kPa")
@@ -201,8 +201,7 @@ with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-b
     st.write(f"🚀 **Summed Ultimate Capacity ($q_u$):** {qu:.2f} kPa")
     
     st.markdown("**Design Capacity Verification ($q_d$):**")
-    st.latex(f"q_d = {qu:.2f}text{{ x }} {phi_g:.2f} = {qd:.2f}text{{ kPa}}")
-
+    st.latex(rf"q_d = {qu:.2f}\ \text{{x}}\ {phi_g:.2f} = {qd:.2f}\ \text{{kPa}}")
 
 # Consolidated Structural Audit Panel
 st.write("---")
