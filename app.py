@@ -3,46 +3,13 @@ import numpy as np
 
 st.set_page_config(page_title="NZBC B1/VM2 Advanced Foundation Tool", page_icon="🇳🇿", layout="wide")
 
-# Add soccer/football theme styling
-st.markdown("""
-<style>
-    body {
-        background-color: #1a472a;
-        color: white;
-    }
-    .stApp {
-        background: linear-gradient(135deg, #1a472a 0%, #0d2818 100%);
-    }
-    .css-1d391kg {
-        background-color: #1a472a;
-    }
-    .metric-card {
-        background-color: rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        padding: 15px;
-        border-left: 4px solid #FFD700;
-    }
-    h1, h2, h3 {
-        color: #FFD700 !important;
-    }
-    .stMarkdown {
-        color: white;
-    }
-    hr {
-        border-color: #FFD700;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-st.title("⚽ 🇳🇿 Professional B1/VM2 Bearing Capacity Calculator ⚽")
+st.title("🇳🇿 Professional B1/VM2 Bearing Capacity Calculator")
 # Property warning notice subtitle
 st.markdown("⚠️ *This app is the property of Ryan. No unauthorised use accepted.*")
 
 st.markdown("""
 Adheres to the **New Zealand Building Code Verification Method B1/VM2**. 
 Automates effective area eccentricities, load orientations, and short/long-term soil behaviors.
-
-*Scoring goals in foundation design! ⚽*
 """)
 
 # --- Side-by-Side Configuration Columns ---
