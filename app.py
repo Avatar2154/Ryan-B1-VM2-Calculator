@@ -1,18 +1,11 @@
 import streamlit as st
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
-import io
 
 st.set_page_config(page_title="NZBC B1/VM2 Advanced Foundation Tool", page_icon="🇳🇿", layout="wide")
 
 st.title("🇳🇿 Professional B1/VM2 Bearing Capacity Calculator")
-
-# Add branding header
-branding_col1, branding_col2 = st.columns([3, 1])
-with branding_col1:
-    st.markdown("⚠️ *This app is the property of **Everiss Consulting Ltd**. No unauthorised use accepted.*")
-with branding_col2:
-    st.markdown("**Everiss Consulting Ltd**")
+# Property warning notice subtitle
+st.markdown("⚠️ *This app is the property of Ryan. No unauthorised use accepted.*")
 
 st.markdown("""
 Adheres to the **New Zealand Building Code Verification Method B1/VM2**. 
@@ -311,110 +304,6 @@ with moment_col3:
     st.write(f"*   **Effective Area (A'): {A_prime:.3f} m²**")
 
 st.write("---")
-st.subheader("📐 Foundation Schematic Diagram")
-
-# Create a simple foundation diagram
-diagram_col1, diagram_col2 = st.columns(2)
-
-with diagram_col1:
-    st.write("**Load Application Diagram (Plan View):**")
-    # Create a simple schematic showing the foundation and loads
-    fig_width = 400
-    fig_height = 400
-    img = Image.new('RGB', (fig_width, fig_height), color='white')
-    draw = ImageDraw.Draw(img)
-    
-    # Draw foundation footprint
-    margin = 40
-    scale = (fig_width - 2*margin) / max(B_raw, L_raw)
-    
-    left = margin + (fig_width - 2*margin - B_raw*scale) / 2
-    top = margin + (fig_height - 2*margin - L_raw*scale) / 2
-    right = left + B_raw*scale
-    bottom = top + L_raw*scale
-    
-    # Foundation rectangle
-    draw.rectangle([left, top, right, bottom], outline='black', width=3, fill='lightgray')
-    
-    # Center point
-    center_x = (left + right) / 2
-    center_y = (top + bottom) / 2
-    draw.ellipse([center_x-5, center_y-5, center_x+5, center_y+5], fill='red')
-    
-    # Draw eccentricity offset (if present)
-    if abs(e_B) > 0.01 or abs(e_L) > 0.01:
-        offset_x = center_x + e_B * scale
-        offset_y = center_y + e_L * scale
-        draw.ellipse([offset_x-5, offset_y-5, offset_x+5, offset_y+5], fill='blue')
-        # Draw line from center to load point
-        draw.line([center_x, center_y, offset_x, offset_y], fill='blue', width=2)
-    
-    # Labels
-    draw.text((10, 10), "Plan View (Top Down)", fill='black')
-    draw.text((10, fig_height-30), f"B = {B_raw:.2f}m", fill='black')
-    draw.text((fig_width-100, 10), f"L = {L_raw:.2f}m", fill='black')
-    draw.text((center_x-30, center_y+15), "Load", fill='red')
-    
-    st.image(img, use_column_width=True, caption="Gray = Footing, Red = Centroid, Blue = Load Point (if eccentric)")
-
-with diagram_col2:
-    st.write("**Vertical Section Diagram:**")
-    # Create a side elevation showing depth and vertical load
-    fig_width = 400
-    fig_height = 400
-    img = Image.new('RGB', (fig_width, fig_height), color='white')
-    draw = ImageDraw.Draw(img)
-    
-    # Draw ground surface
-    ground_y = 80
-    draw.line([20, ground_y, fig_width-20, ground_y], fill='brown', width=3)
-    
-    # Draw footing
-    footing_width = 200
-    footing_left = (fig_width - footing_width) / 2
-    footing_right = footing_left + footing_width
-    
-    # Foundation depth (scaled for visualization, max 150 pixels)
-    max_depth_pixels = 150
-    depth_scale = max_depth_pixels / max(Df, 1.0)
-    footing_depth_pixels = Df * depth_scale
-    
-    footing_top = ground_y
-    footing_bottom = ground_y + footing_depth_pixels
-    
-    draw.rectangle([footing_left, footing_top, footing_right, footing_bottom], outline='black', width=2, fill='lightblue')
-    
-    # Draw soil below
-    soil_y = footing_bottom
-    draw.rectangle([footing_left-20, soil_y, footing_right+20, fig_height-20], outline='brown', width=1, fill='tan')
-    
-    # Draw vertical load arrow at top
-    arrow_x = fig_width / 2
-    arrow_start = 20
-    arrow_end = ground_y - 10
-    draw.line([arrow_x, arrow_start, arrow_x, arrow_end], fill='red', width=3)
-    draw.polygon([arrow_x-10, arrow_end-20, arrow_x+10, arrow_end-20, arrow_x, arrow_end], fill='red')
-    
-    # Draw horizontal load if present
-    if H_factored_critical > 0:
-        h_arrow_x = footing_right + 30
-        h_arrow_start = ground_y - footing_depth_pixels/2
-        h_arrow_end = h_arrow_x + 50
-        draw.line([footing_right, h_arrow_start, h_arrow_end, h_arrow_start], fill='blue', width=3)
-        draw.polygon([h_arrow_end-20, h_arrow_start-10, h_arrow_end-20, h_arrow_start+10, h_arrow_end, h_arrow_start], fill='blue')
-    
-    # Labels
-    draw.text((10, 10), "Side View", fill='black')
-    draw.text((arrow_x+15, arrow_start+5), f"V*={V_capacity_check:.0f}kN", fill='red')
-    draw.text((footing_left-30, ground_y+10), "Ground", fill='brown')
-    draw.text((footing_left-20, footing_top+footing_depth_pixels/2-20), f"D_f={Df:.2f}m", fill='black')
-    draw.text((footing_left, footing_bottom+20), "Soil", fill='brown')
-    if H_factored_critical > 0:
-        draw.text((footing_right+20, h_arrow_start-25), f"H*={H_factored_critical:.0f}kN", fill='blue')
-    
-    st.image(img, use_column_width=True, caption="Side elevation showing foundation depth and loads")
-
-st.write("---")
 st.subheader("🔍 Bearing Pressure Check (Ultimate Limit State)")
 st.caption("**Capacity Demand Ratio (CDR):** CDR = q_d / q = Resistance / Demand. **CDR ≥ 1.0 = ADEQUATE**")
 
@@ -494,12 +383,3 @@ with audit_col3:
     st.write(rf"*   $\lambda_{{ic}}$ (Cohesion Inclination): {lambda_ic:.3f}")
     st.write(rf"*   $\lambda_{{iq}}$ (Surcharge Inclination): {lambda_iq:.3f}")
     st.write(rf"*   $\lambda_{{i\gamma}}$ (Weight Inclination): {lambda_igamma:.3f}")
-
-# Footer with branding
-st.write("---")
-st.markdown("""
-<div style='text-align: center'>
-    <p><strong>Everiss Consulting Ltd</strong></p>
-    <p style='color: gray; font-size: 12px;'>Professional Foundation Design Calculator | NZS 1170.0 Compliant</p>
-</div>
-""", unsafe_allow_html=True)
