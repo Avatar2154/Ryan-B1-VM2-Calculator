@@ -3,13 +3,46 @@ import numpy as np
 
 st.set_page_config(page_title="NZBC B1/VM2 Advanced Foundation Tool", page_icon="🇳🇿", layout="wide")
 
-st.title("🇳🇿 Professional B1/VM2 Bearing Capacity Calculator")
+# Add soccer/football theme styling
+st.markdown("""
+<style>
+    body {
+        background-color: #1a472a;
+        color: white;
+    }
+    .stApp {
+        background: linear-gradient(135deg, #1a472a 0%, #0d2818 100%);
+    }
+    .css-1d391kg {
+        background-color: #1a472a;
+    }
+    .metric-card {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+        border-left: 4px solid #FFD700;
+    }
+    h1, h2, h3 {
+        color: #FFD700 !important;
+    }
+    .stMarkdown {
+        color: white;
+    }
+    hr {
+        border-color: #FFD700;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.title("⚽ 🇳🇿 Professional B1/VM2 Bearing Capacity Calculator ⚽")
 # Property warning notice subtitle
 st.markdown("⚠️ *This app is the property of Ryan. No unauthorised use accepted.*")
 
 st.markdown("""
 Adheres to the **New Zealand Building Code Verification Method B1/VM2**. 
 Automates effective area eccentricities, load orientations, and short/long-term soil behaviors.
+
+*Scoring goals in foundation design! ⚽*
 """)
 
 # --- Side-by-Side Configuration Columns ---
@@ -281,9 +314,9 @@ with moment_col1:
     st.write(f"*   Induced (H* × D_f): {M_B_induced:.2f} kN·m")
     st.write(f"*   **Total M_B: {M_B_total:.2f} kN·m**")
     st.write(f"*   Eccentricity e_B: {e_B:.4f} m")
-    st.write(f"*   Kern limit (B/6): {B_raw/6:.4f} m")
-    kern_check_B = "✅ Within kern" if e_B <= B_raw/6 else "⚠️ Outside kern"
-    st.write(f"*   {kern_check_B}")
+    st.write(f"*   Middle third limit (B/6): {B_raw/6:.4f} m")
+    middle_third_check_B = "✅ ACCEPTABLE" if e_B <= B_raw/6 else "❌ UNACCEPTABLE"
+    st.write(f"*   **{middle_third_check_B}**")
 
 with moment_col2:
     st.markdown("**About L-axis (Length Direction):**")
@@ -291,9 +324,9 @@ with moment_col2:
     st.write(f"*   Induced (H* × D_f): {M_L_induced:.2f} kN·m")
     st.write(f"*   **Total M_L: {M_L_total:.2f} kN·m**")
     st.write(f"*   Eccentricity e_L: {e_L:.4f} m")
-    st.write(f"*   Kern limit (L/6): {L_raw/6:.4f} m")
-    kern_check_L = "✅ Within kern" if e_L <= L_raw/6 else "⚠️ Outside kern"
-    st.write(f"*   {kern_check_L}")
+    st.write(f"*   Middle third limit (L/6): {L_raw/6:.4f} m")
+    middle_third_check_L = "✅ ACCEPTABLE" if e_L <= L_raw/6 else "❌ UNACCEPTABLE"
+    st.write(f"*   **{middle_third_check_L}**")
 
 with moment_col3:
     st.markdown("**Effective Footing Dimensions (Meyerhof):**")
