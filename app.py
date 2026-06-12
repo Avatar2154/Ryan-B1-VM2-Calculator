@@ -50,6 +50,10 @@ with col_geom:
     Df = st.number_input("Foundation Embedment Depth, Df (m)", min_value=0.0, value=0.6, step=0.1)
     
     st.markdown("---")
+    st.subheader("🏗️ Foundation Material")
+    gamma_concrete = st.number_input("Unit Weight of Concrete, γ_c (kN/m³)", min_value=20.0, value=24.0, step=0.5)
+    
+    st.markdown("---")
     st.subheader("💧 Groundwater Table")
     gw_active = st.checkbox("Enable Groundwater Table", value=False)
     if gw_active:
@@ -61,7 +65,12 @@ with col_geom:
 
 with col_loads:
     st.header("🏋️ 3. Design Actions (ULS)")
-    V_star = st.number_input("Vertical Design Load, V* (kN)", min_value=1.0, value=300.0, step=10.0)
+    V_structural = st.number_input("Structural Vertical Load, V*_struct (kN)", min_value=0.0, value=300.0, step=10.0, help="Design load from superstructure (applied at top of foundation)")
+    
+    # Calculate foundation self-weight
+    footing_area = B_raw * L_raw
+    V_foundation = footing_area * Df * gamma_concrete
+    V_star = V_structural + V_foundation
     
     st.markdown("**Direct Bending Moments at Footing Base:**")
     M_B_input = st.number_input("Moment about B-axis (at toe), M_B* (kN·m)", min_value=0.0, value=15.0, step=5.0, help="Directly applied at footing base")
@@ -190,6 +199,20 @@ qu = term1 + term2 + term3
 qd = qu * phi_g
 
 # --- Results Presentation Layer ---
+st.write("---")
+st.subheader("📊 Vertical Load Summary")
+
+load_col1, load_col2, load_col3 = st.columns(3)
+
+with load_col1:
+    st.metric(label="Structural Load (V*_struct)", value=f"{V_structural:.1f} kN")
+
+with load_col2:
+    st.metric(label="Foundation Self-Weight", value=f"{V_foundation:.1f} kN", help=f"Area: {footing_area:.2f} m² × Depth: {Df:.2f} m × γ_c: {gamma_concrete:.1f} kN/m³")
+
+with load_col3:
+    st.metric(label="Total Vertical Load (V*)", value=f"{V_star:.1f} kN")
+
 st.write("---")
 st.subheader("📊 Ultimate Geotechnical Capacity Results")
 
