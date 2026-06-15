@@ -145,18 +145,31 @@ if B_prime <= 0 or L_prime <= 0:
 A_prime = B_prime * L_prime
 phi_rad = np.radians(phi_deg)
 
+
 # 5. Advanced Groundwater Surcharge Rules
+
+# Surcharge (q) remains as you had it (correct logic)
 if gw_active and dw <= Df:
     q_surcharge = (dw * gamma) + ((Df - dw) * (gamma - gamma_w))
 else:
     q_surcharge = Df * gamma
 
+# --- UPDATED γ′ LOGIC (KEY FIX) ---
+# Apply 2B influence depth below footing base for third term (γ′)
+
 if gw_active:
+    influence_depth = Df + 2.0 * B_prime  # 2B below foundation base
+    
     if dw <= Df:
+        # Water above base → fully submerged
         gamma_prime = gamma - gamma_w
-    elif dw < (Df + B_prime):
-        gamma_prime = gamma - gamma_w + ((dw - Df) / B_prime) * gamma_w
+
+    elif dw <= influence_depth:
+        # Water within 2B → assume full buoyant effect (B1/VM2 conservative simplification)
+        gamma_prime = gamma - gamma_w
+
     else:
+        # Water too deep → no reduction
         gamma_prime = gamma
 else:
     gamma_prime = gamma
