@@ -396,3 +396,98 @@ with audit_col3:
     st.write(rf"*   $\lambda_{{ic}}$ (Cohesion Inclination): {lambda_ic:.3f}")
     st.write(rf"*   $\lambda_{{iq}}$ (Surcharge Inclination): {lambda_iq:.3f}")
     st.write(rf"*   $\lambda_{{i\gamma}}$ (Weight Inclination): {lambda_igamma:.3f}")
+
+
+st.write("---")
+st.subheader("🧾 Printable Calculation Summary")
+
+if st.button("📄 Generate Calculation Report"):
+    
+    st.markdown("## 🇳🇿 B1/VM2 Bearing Capacity Calculation Summary")
+
+    # --- INPUT SUMMARY ---
+    st.markdown("### 📥 Inputs")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("**Soil Parameters:**")
+        st.write(f"- Cohesion (c / Su): {c_calc:.2f} kPa")
+        st.write(f"- Friction Angle (ϕ): {phi_deg:.1f}°")
+        st.write(f"- Unit Weight (γ): {gamma:.2f} kN/m³")
+        st.write(f"- Buoyant Unit Weight (γ′): {gamma_prime:.2f} kN/m³")
+
+        st.markdown("**Geometry:**")
+        st.write(f"- Width (B): {B_raw:.2f} m")
+        st.write(f"- Length (L): {L_raw:.2f} m")
+        st.write(f"- Embedment Depth (Df): {Df:.2f} m")
+
+    with col2:
+        st.markdown("**Loads:**")
+        st.write(f"- Vertical Load (Factored): {V_capacity_check:.2f} kN")
+        st.write(f"- Horizontal Load (Critical): {H_factored_critical:.2f} kN")
+
+        st.markdown("**Moments:**")
+        st.write(f"- M_B: {M_B_total:.2f} kNm")
+        st.write(f"- M_L: {M_L_total:.2f} kNm")
+
+        st.markdown("**Effective Dimensions:**")
+        st.write(f"- B′: {B_prime:.3f} m")
+        st.write(f"- L′: {L_prime:.3f} m")
+        st.write(f"- A′: {A_prime:.3f} m²")
+
+    # --- EQUATION ---
+    st.markdown("### 📐 Governing Bearing Capacity Equation")
+
+    st.latex(r"""
+    q_u =
+    (c \cdot N_c \cdot \lambda_{cs} \cdot \lambda_{cd} \cdot \lambda_{ic})
+    +
+    (q \cdot N_q \cdot \lambda_{qs} \cdot \lambda_{qd} \cdot \lambda_{iq})
+    +
+    (0.5 \cdot \gamma' \cdot B' \cdot N_\gamma \cdot \lambda_{\gamma s} \cdot \lambda_{\gamma d} \cdot \lambda_{i\gamma})
+    """)
+
+    # --- NUMERICAL EXPANSION ---
+    st.markdown("### 🔢 Expanded Calculation")
+
+    st.latex(rf"""
+    q_u =
+    ({c_calc:.2f} \times {Nc:.2f} \times {lambda_cs:.2f} \times {lambda_cd:.2f} \times {lambda_ic:.2f})
+    +
+    ({q_surcharge:.2f} \times {Nq:.2f} \times {lambda_qs:.2f} \times {lambda_qd:.2f} \times {lambda_iq:.2f})
+    +
+    (0.5 \times {gamma_prime:.2f} \times {B_prime:.2f} \times {Ngamma:.2f} \times {lambda_gammas:.2f} \times {lambda_gammad:.2f} \times {lambda_igamma:.2f})
+    """)
+
+    # --- TERM BREAKDOWN ---
+    st.markdown("### 🧮 Term Contributions")
+
+    st.write(f"- Cohesion Term = {term1:.2f} kPa")
+    st.write(f"- Surcharge Term = {term2:.2f} kPa")
+    st.write(f"- Unit Weight Term = {term3:.2f} kPa")
+
+    # --- FINAL RESULTS ---
+    st.markdown("### ✅ Results")
+
+    st.write(f"- Ultimate Capacity (q_u) = {qu:.2f} kPa")
+    st.write(f"- Reduction Factor (ϕ_g) = {phi_g:.2f}")
+    st.write(f"- Design Capacity (q_d) = {qd:.2f} kPa")
+    st.write(f"- Applied Bearing Pressure (q) = {q_factored:.2f} kPa")
+    st.write(f"- Capacity Demand Ratio (CDR) = {CDR:.2f}")
+
+    # --- DESIGN OUTCOME ---
+    st.markdown("### 📊 Design Check")
+
+    if CDR >= 1.0:
+        st.success(f"✅ ADEQUATE: CDR = {CDR:.2f}")
+    else:
+        st.error(f"❌ INADEQUATE: CDR = {CDR:.2f}")
+
+    # --- NOTES ---
+    st.markdown("### 📝 Notes")
+    st.write("- Effective area method (Meyerhof) used")
+    st.write("- Eccentricity based on 0.9 × unfactored vertical loads")
+    st.write("- Horizontal load effects included via inclination factors")
+    st.write("- Buoyant unit weight applied within 2B of founding level (third term only)")
+``
