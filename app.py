@@ -440,7 +440,7 @@ if st.button("📄 Generate Calculation Report"):
 st.write("---")
 st.subheader("🧾 Printable Calculation Summary")
 
-if st.button("📄 Generate Calculation Report"):
+if st.button("📄 Generate Calculation Report", key="report_button"):
 
     try:
         st.markdown("## 🇳🇿 B1/VM2 Bearing Capacity Calculation Summary")
