@@ -436,58 +436,47 @@ if st.button("📄 Generate Calculation Report"):
         st.write(f"- L′: {L_prime:.3f} m")
         st.write(f"- A′: {A_prime:.3f} m²")
 
-    # --- EQUATION ---
-    st.markdown("### 📐 Governing Bearing Capacity Equation")
+   
+st.write("---")
+st.subheader("🧾 Printable Calculation Summary")
 
-    st.latex(r"""
-    q_u =
-    (c \cdot N_c \cdot \lambda_{cs} \cdot \lambda_{cd} \cdot \lambda_{ic})
-    +
-    (q \cdot N_q \cdot \lambda_{qs} \cdot \lambda_{qd} \cdot \lambda_{iq})
-    +
-    (0.5 \cdot \gamma' \cdot B' \cdot N_\gamma \cdot \lambda_{\gamma s} \cdot \lambda_{\gamma d} \cdot \lambda_{i\gamma})
-    """)
+if st.button("📄 Generate Calculation Report"):
 
-    # --- NUMERICAL EXPANSION ---
-    st.markdown("### 🔢 Expanded Calculation")
+    try:
+        st.markdown("## 🇳🇿 B1/VM2 Bearing Capacity Calculation Summary")
 
-    st.latex(rf"""
-    q_u =
-    ({c_calc:.2f} \times {Nc:.2f} \times {lambda_cs:.2f} \times {lambda_cd:.2f} \times {lambda_ic:.2f})
-    +
-    ({q_surcharge:.2f} \times {Nq:.2f} \times {lambda_qs:.2f} \times {lambda_qd:.2f} \times {lambda_iq:.2f})
-    +
-    (0.5 \times {gamma_prime:.2f} \times {B_prime:.2f} \times {Ngamma:.2f} \times {lambda_gammas:.2f} \times {lambda_gammad:.2f} \times {lambda_igamma:.2f})
-    """)
+        st.markdown("### 📥 Inputs")
+        st.write(f"Cohesion (c): {c_calc:.2f} kPa")
+        st.write(f"Friction Angle (ϕ): {phi_deg:.1f}°")
+        st.write(f"Unit Weight (γ): {gamma:.2f} kN/m³")
+        st.write(f"Buoyant Unit Weight (γ′): {gamma_prime:.2f} kN/m³")
 
-    # --- TERM BREAKDOWN ---
-    st.markdown("### 🧮 Term Contributions")
+        st.markdown("### 📐 Equation")
+        st.latex(
+            "q_u = (cN_c\\lambda_{cs}\\lambda_{cd}\\lambda_{ic}) + "
+            "(qN_q\\lambda_{qs}\\lambda_{qd}\\lambda_{iq}) + "
+            "(0.5\\gamma'B'N_\\gamma\\lambda_{\\gamma s}\\lambda_{\\gamma d}\\lambda_{i\\gamma})"
+        )
 
-    st.write(f"- Cohesion Term = {term1:.2f} kPa")
-    st.write(f"- Surcharge Term = {term2:.2f} kPa")
-    st.write(f"- Unit Weight Term = {term3:.2f} kPa")
+        st.markdown("### 🔢 Expanded Form")
+        st.latex(
+            "q_u = "
+            f"({c_calc:.2f} \\times {Nc:.2f} \\times {lambda_cs:.2f} \\times {lambda_cd:.2f} \\times {lambda_ic:.2f})"
+            " + "
+            f"({q_surcharge:.2f} \\times {Nq:.2f} \\times {lambda_qs:.2f} \\times {lambda_qd:.2f} \\times {lambda_iq:.2f})"
+            " + "
+            f"(0.5 \\times {gamma_prime:.2f} \\times {B_prime:.2f} \\times {Ngamma:.2f} \\times {lambda_gammas:.2f} \\times {lambda_gammad:.2f} \\times {lambda_igamma:.2f})"
+        )
 
-    # --- FINAL RESULTS ---
-    st.markdown("### ✅ Results")
+        st.markdown("### ✅ Results")
+        st.write(f"Ultimate Capacity q_u = {qu:.2f} kPa")
+        st.write(f"Design Capacity q_d = {qd:.2f} kPa")
+        st.write(f"Bearing Pressure q = {q_factored:.2f} kPa")
 
-    st.write(f"- Ultimate Capacity (q_u) = {qu:.2f} kPa")
-    st.write(f"- Reduction Factor (ϕ_g) = {phi_g:.2f}")
-    st.write(f"- Design Capacity (q_d) = {qd:.2f} kPa")
-    st.write(f"- Applied Bearing Pressure (q) = {q_factored:.2f} kPa")
-    st.write(f"- Capacity Demand Ratio (CDR) = {CDR:.2f}")
+        if np.isfinite(CDR):
+            st.write(f"CDR = {CDR:.2f}")
+        else:
+            st.write("CDR = ∞")
 
-    # --- DESIGN OUTCOME ---
-    st.markdown("### 📊 Design Check")
-
-    if CDR >= 1.0:
-        st.success(f"✅ ADEQUATE: CDR = {CDR:.2f}")
-    else:
-        st.error(f"❌ INADEQUATE: CDR = {CDR:.2f}")
-
-    # --- NOTES ---
-    st.markdown("### 📝 Notes")
-    st.write("- Effective area method (Meyerhof) used")
-    st.write("- Eccentricity based on 0.9 × unfactored vertical loads")
-    st.write("- Horizontal load effects included via inclination factors")
-    st.write("- Buoyant unit weight applied within 2B of founding level (third term only)")
-``
+    except Exception as e:
+        st.error(f"Report generation error: {e}")
