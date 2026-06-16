@@ -224,6 +224,29 @@ with col_geom:
         dw = 999.0
         gamma_w = 0.0
 
+    st.markdown("---")
+    st.subheader("⛰️ Ground Inclination")
+    slope_active = st.checkbox("Enable Ground Inclination", value=False)
+    if slope_active:
+        slope_angle_deg = st.number_input(
+            "Slope Angle Below Horizontal, β (degrees)",
+            min_value=0.0,
+            max_value=45.0,
+            value=10.0,
+            step=1.0,
+            help="Ground surface inclination angle measured downward from horizontal.",
+        )
+        D_E = st.number_input(
+            "Distance D_E to Slope Face (m)",
+            min_value=0.0,
+            value=2.0,
+            step=0.1,
+            help="Horizontal distance from footing edge to slope face crest.",
+        )
+    else:
+        slope_angle_deg = 0.0
+        D_E = 999.0
+
 with col_loads:
     st.header("🏋️ 3. Design Actions (ULS)")
     
@@ -383,18 +406,41 @@ else:
         lambda_cd = lambda_qd - (1.0 - lambda_qd) / (Nc * np.tan(phi_rad))
     lambda_gammad = 1.0
 
-# 10. Synthesize Ultimate & Design Soil Capacity Values
-term1 = c_calc * Nc * lambda_cs * lambda_cd * lambda_ic
-term2 = q_surcharge * Nq * lambda_qs * lambda_qd * lambda_iq
-term3 = 0.5 * gamma_prime * B_prime * Ngamma * lambda_gammas * lambda_gammad * lambda_igamma
+# 10. Ground Inclination Modifiers
+# Disabled by default, matching current behavior unless user enables slope effects.
+if not slope_active or slope_angle_deg <= 0:
+    lambda_cg = lambda_qg = lambda_gammag = 1.0
+else:
+    beta_rad = np.radians(slope_angle_deg)
+    # Influence decreases with distance from slope face (conservative linear decay to 8B').
+    influence_distance = max(8.0 * B_prime, 0.001)
+    proximity_factor = max(0.0, 1.0 - (D_E / influence_distance))
+    slope_reduction = proximity_factor * np.tan(beta_rad)
+
+    lambda_qg = max(0.0, 1.0 - slope_reduction)
+    lambda_gammag = max(0.0, (1.0 - slope_reduction) ** 2)
+
+    if phi_deg == 0:
+        lambda_cg = max(0.0, 1.0 - 0.5 * slope_reduction)
+    else:
+        denom = Nc * np.tan(phi_rad)
+        if denom > 0:
+            lambda_cg = lambda_qg - ((1.0 - lambda_qg) / denom)
+        else:
+            lambda_cg = lambda_qg
+
+# 11. Synthesize Ultimate & Design Soil Capacity Values
+term1 = c_calc * Nc * lambda_cs * lambda_cd * lambda_ic * lambda_cg
+term2 = q_surcharge * Nq * lambda_qs * lambda_qd * lambda_iq * lambda_qg
+term3 = 0.5 * gamma_prime * B_prime * Ngamma * lambda_gammas * lambda_gammad * lambda_igamma * lambda_gammag
 
 qu = term1 + term2 + term3
 qd = qu * phi_g
 
-# 11. Calculate factored bearing pressure using effective area
+# 12. Calculate factored bearing pressure using effective area
 q_factored = V_capacity_check / A_prime
 
-# 12. Calculate CDR (Capacity Demand Ratio)
+# 13. Calculate CDR (Capacity Demand Ratio)
 # CDR = Resistance / Demand = q_d / q_factored
 # CDR > 1.0 means design is adequate (resistance exceeds demand)
 CDR = qd / q_factored if q_factored > 0 else float('inf')
@@ -524,6 +570,10 @@ pdf_input_rows = [
     ("Groundwater Table", None),
     ("Groundwater Enabled", "Yes" if gw_active else "No"),
     ("Groundwater Depth", f"{dw:.3f} m" if gw_active else "N/A"),
+    ("Ground Inclination", None),
+    ("Ground Inclination Enabled", "Yes" if slope_active else "No"),
+    ("Slope Angle beta", f"{slope_angle_deg:.2f} deg" if slope_active else "N/A"),
+    ("Distance D_E", f"{D_E:.3f} m" if slope_active else "N/A"),
 ]
 
 if design_case == "Seismic / Short-Term (Undrained)":
@@ -563,11 +613,11 @@ equation_rows = [
 equation_latex_rows = [
     (
         "Governing Ultimate Capacity Equation",
-        r"q_u = (c \times N_c \times \lambda_{cs} \times \lambda_{cd} \times \lambda_{ic}) + (q \times N_q \times \lambda_{qs} \times \lambda_{qd} \times \lambda_{iq}) + (0.5 \times \gamma' \times B' \times N_\gamma \times \lambda_{\gamma s} \times \lambda_{\gamma d} \times \lambda_{i\gamma})",
+        r"q_u = (c \times N_c \times \lambda_{cs} \times \lambda_{cd} \times \lambda_{ic} \times \lambda_{cg}) + (q \times N_q \times \lambda_{qs} \times \lambda_{qd} \times \lambda_{iq} \times \lambda_{qg}) + (0.5 \times \gamma' \times B' \times N_\gamma \times \lambda_{\gamma s} \times \lambda_{\gamma d} \times \lambda_{i\gamma} \times \lambda_{\gamma g})",
     ),
     (
         "Expanded Equation with Calculated Values",
-        rf"q_u = ({c_calc:.2f}\times {Nc:.2f}\times {lambda_cs:.2f}\times {lambda_cd:.2f}\times {lambda_ic:.2f}) + ({q_surcharge:.2f}\times {Nq:.2f}\times {lambda_qs:.2f}\times {lambda_qd:.2f}\times {lambda_iq:.2f}) + (0.5\times {gamma_prime:.2f}\times {B_prime:.2f}\times {Ngamma:.2f}\times {lambda_gammas:.2f}\times {lambda_gammad:.2f}\times {lambda_igamma:.2f})",
+        rf"q_u = ({c_calc:.2f}\times {Nc:.2f}\times {lambda_cs:.2f}\times {lambda_cd:.2f}\times {lambda_ic:.2f}\times {lambda_cg:.2f}) + ({q_surcharge:.2f}\times {Nq:.2f}\times {lambda_qs:.2f}\times {lambda_qd:.2f}\times {lambda_iq:.2f}\times {lambda_qg:.2f}) + (0.5\times {gamma_prime:.2f}\times {B_prime:.2f}\times {Ngamma:.2f}\times {lambda_gammas:.2f}\times {lambda_gammad:.2f}\times {lambda_igamma:.2f}\times {lambda_gammag:.2f})",
     ),
 ]
 
@@ -589,6 +639,10 @@ pdf_factor_rows = [
         "Inclination factors.",
     ),
     (
+        rf"\lambda_{{cg}}={lambda_cg:.3f},\ \lambda_{{qg}}={lambda_qg:.3f},\ \lambda_{{\gamma g}}={lambda_gammag:.3f}",
+        "Ground inclination factors.",
+    ),
+    (
         rf"m={exponent_m:.3f}",
         "Load exponent.",
     ),
@@ -598,10 +652,10 @@ pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows, pdf_factor_rows, e
 
 with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-by-Step Multiplication)"):
     st.markdown("**Governing Ultimate Capacity Equation ($q_u$):**")
-    st.latex(r"q_u = (c \times N_c \times \lambda_{cs} \times \lambda_{cd} \times \lambda_{ic}) + (q \times N_q \times \lambda_{qs} \times \lambda_{qd} \times \lambda_{iq}) + (0.5 \times \gamma' \times B' \times N_\gamma \times \lambda_{\gamma s} \times \lambda_{\gamma d} \times \lambda_{i\gamma})")
+    st.latex(r"q_u = (c \times N_c \times \lambda_{cs} \times \lambda_{cd} \times \lambda_{ic} \times \lambda_{cg}) + (q \times N_q \times \lambda_{qs} \times \lambda_{qd} \times \lambda_{iq} \times \lambda_{qg}) + (0.5 \times \gamma' \times B' \times N_\gamma \times \lambda_{\gamma s} \times \lambda_{\gamma d} \times \lambda_{i\gamma} \times \lambda_{\gamma g})")
     
     st.markdown("**Your Values Multiplied Out:**")
-    st.latex(rf"q_u = ({c_calc:.2f}\ \text{{×}}\ {Nc:.2f}\ \text{{×}}\ {lambda_cs:.2f}\ \text{{×}}\ {lambda_cd:.2f}\ \text{{×}}\ {lambda_ic:.2f}) + ({q_surcharge:.2f}\ \text{{×}}\ {Nq:.2f}\ \text{{×}}\ {lambda_qs:.2f}\ \text{{×}}\ {lambda_qd:.2f}\ \text{{×}}\ {lambda_iq:.2f}) + (0.5\ \text{{×}}\ {gamma_prime:.2f}\ \text{{×}}\ {B_prime:.2f}\ \text{{×}}\ {Ngamma:.2f}\ \text{{×}}\ {lambda_gammas:.2f}\ \text{{×}}\ {lambda_gammad:.2f}\ \text{{×}}\ {lambda_igamma:.2f})")
+    st.latex(rf"q_u = ({c_calc:.2f}\ \text{{×}}\ {Nc:.2f}\ \text{{×}}\ {lambda_cs:.2f}\ \text{{×}}\ {lambda_cd:.2f}\ \text{{×}}\ {lambda_ic:.2f}\ \text{{×}}\ {lambda_cg:.2f}) + ({q_surcharge:.2f}\ \text{{×}}\ {Nq:.2f}\ \text{{×}}\ {lambda_qs:.2f}\ \text{{×}}\ {lambda_qd:.2f}\ \text{{×}}\ {lambda_iq:.2f}\ \text{{×}}\ {lambda_qg:.2f}) + (0.5\ \text{{×}}\ {gamma_prime:.2f}\ \text{{×}}\ {B_prime:.2f}\ \text{{×}}\ {Ngamma:.2f}\ \text{{×}}\ {lambda_gammas:.2f}\ \text{{×}}\ {lambda_gammad:.2f}\ \text{{×}}\ {lambda_igamma:.2f}\ \text{{×}}\ {lambda_gammag:.2f})")
     
     st.markdown("**Calculated Partial Terms:**")
     st.write(f"*   **Cohesion Term:** {term1:.2f} kPa")
@@ -644,6 +698,10 @@ with audit_col3:
     st.write(rf"*   $\lambda_{{ic}}$ (Cohesion Inclination): {lambda_ic:.3f}")
     st.write(rf"*   $\lambda_{{iq}}$ (Surcharge Inclination): {lambda_iq:.3f}")
     st.write(rf"*   $\lambda_{{i\gamma}}$ (Weight Inclination): {lambda_igamma:.3f}")
+    st.markdown("**Ground Inclination Factors ($\lambda_g$):**")
+    st.write(rf"*   $\lambda_{{cg}}$ (Cohesion Ground): {lambda_cg:.3f}")
+    st.write(rf"*   $\lambda_{{qg}}$ (Surcharge Ground): {lambda_qg:.3f}")
+    st.write(rf"*   $\lambda_{{\gamma g}}$ (Weight Ground): {lambda_gammag:.3f}")
 
 st.subheader("📄 Download PDF Report")
 st.download_button(
