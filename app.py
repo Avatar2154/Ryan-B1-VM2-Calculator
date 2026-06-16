@@ -9,10 +9,10 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 
 
-def _render_equation_image(equation_text):
+def _render_equation_image(equation_text, fig_height=0.8):
     """Render a LaTeX-like equation to PNG bytes for PDF embedding."""
     rcParams["mathtext.fontset"] = "stix"
-    fig = plt.figure(figsize=(8.2, 0.8), dpi=200)
+    fig = plt.figure(figsize=(8.2, fig_height), dpi=200)
     fig.patch.set_facecolor("white")
     fig.text(0.01, 0.5, f"${equation_text}$", fontsize=11, va="center", ha="left")
     fig.tight_layout(pad=0.2)
@@ -46,13 +46,12 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
         pdf.drawString(left_margin, y, text)
         y -= line_height
 
-    def _equation_line(equation_text):
+    def _math_line(equation_text, image_height=28, fig_height=0.8):
         nonlocal y
-        if y < 90:
+        if y < image_height + 20:
             _new_page()
-        equation_image = ImageReader(_render_equation_image(equation_text))
+        equation_image = ImageReader(_render_equation_image(equation_text, fig_height=fig_height))
         image_width = page_width - (2 * left_margin)
-        image_height = 28
         pdf.drawImage(
             equation_image,
             left_margin,
@@ -80,14 +79,14 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
 
     y -= 6
     _line("Bearing Capacity and Shape Factor Summary", bold=True)
-    for label, value in factor_rows:
-        _line(f"- {label}: {value}")
+    for symbol, value in factor_rows:
+        _math_line(f"{symbol} = {value}", image_height=22, fig_height=0.45)
 
     y -= 6
     _line("Full Calculation Equation Expansion", bold=True)
     for label, equation_text in equation_latex_rows:
         _line(label, bold=True)
-        _equation_line(equation_text)
+        _math_line(equation_text)
     for label, value in equation_rows:
         _line(f"- {label}: {value}")
 
@@ -501,19 +500,19 @@ equation_latex_rows = [
 ]
 
 pdf_factor_rows = [
-    ("N_c (Cohesion Multiplier)", f"{Nc:.3f}"),
-    ("N_q (Surcharge Multiplier)", f"{Nq:.3f}"),
-    ("N_gamma (Self-Weight Multiplier)", f"{Ngamma:.3f}"),
-    ("lambda_cs (Cohesion Shape)", f"{lambda_cs:.3f}"),
-    ("lambda_qs (Surcharge Shape)", f"{lambda_qs:.3f}"),
-    ("lambda_gamma_s (Soil Weight Shape)", f"{lambda_gammas:.3f}"),
-    ("lambda_cd (Cohesion Depth)", f"{lambda_cd:.3f}"),
-    ("lambda_qd (Surcharge Depth)", f"{lambda_qd:.3f}"),
-    ("lambda_gamma_d (Soil Weight Depth)", f"{lambda_gammad:.3f}"),
-    ("Load Exponent m", f"{exponent_m:.3f}"),
-    ("lambda_ic (Cohesion Inclination)", f"{lambda_ic:.3f}"),
-    ("lambda_iq (Surcharge Inclination)", f"{lambda_iq:.3f}"),
-    ("lambda_i_gamma (Soil Weight Inclination)", f"{lambda_igamma:.3f}"),
+    (r"N_c", f"{Nc:.3f}"),
+    (r"N_q", f"{Nq:.3f}"),
+    (r"N_\gamma", f"{Ngamma:.3f}"),
+    (r"\lambda_{cs}", f"{lambda_cs:.3f}"),
+    (r"\lambda_{qs}", f"{lambda_qs:.3f}"),
+    (r"\lambda_{\gamma s}", f"{lambda_gammas:.3f}"),
+    (r"\lambda_{cd}", f"{lambda_cd:.3f}"),
+    (r"\lambda_{qd}", f"{lambda_qd:.3f}"),
+    (r"\lambda_{\gamma d}", f"{lambda_gammad:.3f}"),
+    (r"m", f"{exponent_m:.3f}"),
+    (r"\lambda_{ic}", f"{lambda_ic:.3f}"),
+    (r"\lambda_{iq}", f"{lambda_iq:.3f}"),
+    (r"\lambda_{i\gamma}", f"{lambda_igamma:.3f}"),
 ]
 
 pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows, pdf_factor_rows, equation_rows, equation_latex_rows)
