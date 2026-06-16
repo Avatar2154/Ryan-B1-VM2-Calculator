@@ -243,9 +243,15 @@ with col_geom:
             step=0.1,
             help="Horizontal distance from footing edge to slope face crest.",
         )
+        slope_direction = st.selectbox(
+            "Slope Direction Relative to Footing",
+            ["Parallel to Width (B)", "Parallel to Length (L)"],
+            help="Ground-inclination factors are applied only when slope direction matches the governing effective-width direction.",
+        )
     else:
         slope_angle_deg = 0.0
         D_E = 999.0
+        slope_direction = "Not Enabled"
 
 with col_loads:
     st.header("🏋️ 3. Design Actions (ULS)")
@@ -408,7 +414,11 @@ else:
 
 # 10. Ground Inclination Modifiers
 # Disabled by default, matching current behavior unless user enables slope effects.
-if not slope_active or slope_angle_deg <= 0:
+# Ground inclination applies only if slope orientation matches governing effective-width direction.
+governing_width_direction = "Parallel to Width (B)" if B_prime <= L_prime else "Parallel to Length (L)"
+slope_applies = slope_active and slope_angle_deg > 0 and slope_direction == governing_width_direction
+
+if not slope_applies:
     lambda_cg = lambda_qg = lambda_gammag = 1.0
 else:
     beta_rad = np.radians(slope_angle_deg)
@@ -574,6 +584,9 @@ pdf_input_rows = [
     ("Ground Inclination Enabled", "Yes" if slope_active else "No"),
     ("Slope Angle beta", f"{slope_angle_deg:.2f} deg" if slope_active else "N/A"),
     ("Distance D_E", f"{D_E:.3f} m" if slope_active else "N/A"),
+    ("Slope Direction", slope_direction if slope_active else "N/A"),
+    ("Governing Width Direction", governing_width_direction),
+    ("Inclination Applied to Capacity", "Yes" if slope_applies else "No"),
 ]
 
 if design_case == "Seismic / Short-Term (Undrained)":
@@ -702,6 +715,9 @@ with audit_col3:
     st.write(rf"*   $\lambda_{{cg}}$ (Cohesion Ground): {lambda_cg:.3f}")
     st.write(rf"*   $\lambda_{{qg}}$ (Surcharge Ground): {lambda_qg:.3f}")
     st.write(rf"*   $\lambda_{{\gamma g}}$ (Weight Ground): {lambda_gammag:.3f}")
+    st.write(f"*   Slope Direction Selected: {slope_direction if slope_active else 'Not Enabled'}")
+    st.write(f"*   Governing Effective-Width Direction: {governing_width_direction}")
+    st.write(f"*   Ground Inclination Applied: {'Yes' if slope_applies else 'No'}")
 
 st.subheader("📄 Download PDF Report")
 st.download_button(
