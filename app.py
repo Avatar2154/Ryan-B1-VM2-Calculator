@@ -2,11 +2,29 @@ import streamlit as st
 import numpy as np
 from io import BytesIO
 from datetime import datetime
+from matplotlib import pyplot as plt
+from matplotlib import rcParams
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
 
 
-def _build_pdf_report(input_rows, output_rows, equation_rows):
+def _render_equation_image(equation_text):
+    """Render a LaTeX-like equation to PNG bytes for PDF embedding."""
+    rcParams["mathtext.fontset"] = "stix"
+    fig = plt.figure(figsize=(8.2, 0.8), dpi=200)
+    fig.patch.set_facecolor("white")
+    fig.text(0.01, 0.5, f"${equation_text}$", fontsize=11, va="center", ha="left")
+    fig.tight_layout(pad=0.2)
+
+    image_buffer = BytesIO()
+    fig.savefig(image_buffer, format="png", bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    image_buffer.seek(0)
+    return image_buffer
+
+
+def _build_pdf_report(input_rows, output_rows, equation_rows, equation_latex_rows):
     """Create a simple multi-page PDF report for download."""
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
@@ -28,6 +46,24 @@ def _build_pdf_report(input_rows, output_rows, equation_rows):
         pdf.drawString(left_margin, y, text)
         y -= line_height
 
+    def _equation_line(equation_text):
+        nonlocal y
+        if y < 90:
+            _new_page()
+        equation_image = ImageReader(_render_equation_image(equation_text))
+        image_width = page_width - (2 * left_margin)
+        image_height = 28
+        pdf.drawImage(
+            equation_image,
+            left_margin,
+            y - image_height + 4,
+            width=image_width,
+            height=image_height,
+            preserveAspectRatio=True,
+            mask="auto",
+        )
+        y -= (image_height + 6)
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     _line("NZBC B1/VM2 Bearing Capacity Report", bold=True)
     _line(f"Generated: {timestamp}")
@@ -44,6 +80,9 @@ def _build_pdf_report(input_rows, output_rows, equation_rows):
 
     y -= 6
     _line("Full Calculation Equation Expansion", bold=True)
+    for label, equation_text in equation_latex_rows:
+        _line(label, bold=True)
+        _equation_line(equation_text)
     for label, value in equation_rows:
         _line(f"- {label}: {value}")
 
@@ -438,8 +477,6 @@ pdf_output_rows = [
 ]
 
 equation_rows = [
-    ("Governing Equation", "q_u = (c*Nc*l_cs*l_cd*l_ic) + (q*Nq*l_qs*l_qd*l_iq) + (0.5*gamma'*B'*N_gamma*l_gamma_s*l_gamma_d*l_i_gamma)"),
-    ("Expanded Multiplication", f"q_u = ({c_calc:.2f}*{Nc:.2f}*{lambda_cs:.2f}*{lambda_cd:.2f}*{lambda_ic:.2f}) + ({q_surcharge:.2f}*{Nq:.2f}*{lambda_qs:.2f}*{lambda_qd:.2f}*{lambda_iq:.2f}) + (0.5*{gamma_prime:.2f}*{B_prime:.2f}*{Ngamma:.2f}*{lambda_gammas:.2f}*{lambda_gammad:.2f}*{lambda_igamma:.2f})"),
     ("Cohesion Term", f"{term1:.2f} kPa"),
     ("Surcharge Term", f"{term2:.2f} kPa"),
     ("Soil Weight Term", f"{term3:.2f} kPa"),
@@ -447,7 +484,18 @@ equation_rows = [
     ("Design Verification", f"q_d = {qu:.2f} * {phi_g:.2f} = {qd:.2f} kPa"),
 ]
 
-pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows, equation_rows)
+equation_latex_rows = [
+    (
+        "Governing Ultimate Capacity Equation",
+        r"q_u = (c \times N_c \times \lambda_{cs} \times \lambda_{cd} \times \lambda_{ic}) + (q \times N_q \times \lambda_{qs} \times \lambda_{qd} \times \lambda_{iq}) + (0.5 \times \gamma' \times B' \times N_\gamma \times \lambda_{\gamma s} \times \lambda_{\gamma d} \times \lambda_{i\gamma})",
+    ),
+    (
+        "Expanded Equation with Calculated Values",
+        rf"q_u = ({c_calc:.2f}\times {Nc:.2f}\times {lambda_cs:.2f}\times {lambda_cd:.2f}\times {lambda_ic:.2f}) + ({q_surcharge:.2f}\times {Nq:.2f}\times {lambda_qs:.2f}\times {lambda_qd:.2f}\times {lambda_iq:.2f}) + (0.5\times {gamma_prime:.2f}\times {B_prime:.2f}\times {Ngamma:.2f}\times {lambda_gammas:.2f}\times {lambda_gammad:.2f}\times {lambda_igamma:.2f})",
+    ),
+]
+
+pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows, equation_rows, equation_latex_rows)
 
 with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-by-Step Multiplication)"):
     st.markdown("**Governing Ultimate Capacity Equation ($q_u$):**")
