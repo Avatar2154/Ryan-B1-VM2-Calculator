@@ -97,11 +97,20 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
         right_x = left_margin + col_width + col_gap
 
         for i in range(0, len(rows), 2):
+            # Heading rows are encoded as (heading_text, None).
+            if rows[i][1] is None:
+                if y < 56:
+                    _new_page()
+                pdf.setFont("Helvetica-Bold", 10)
+                pdf.drawString(left_x, y, rows[i][0])
+                y -= line_height
+                continue
+
             if y < 56:
                 _new_page()
             left_text = f"- {rows[i][0]}: {rows[i][1]}"
             right_text = ""
-            if i + 1 < len(rows):
+            if i + 1 < len(rows) and rows[i + 1][1] is not None:
                 right_text = f"- {rows[i + 1][0]}: {rows[i + 1][1]}"
 
             pdf.setFont("Helvetica", 10)
@@ -486,13 +495,16 @@ res_col2.metric(label="Geotechnical Reduction Factor (𝜙_g)", value=f"{phi_g:.
 res_col3.metric(label="Design Geotechnical Capacity (q_d)", value=f"{qd:.1f} kPa")
 
 pdf_input_rows = [
+    ("Design + Soil", None),
     ("Design Case", design_case),
     ("Footing Type", footing_type),
+    ("Geometry + Material", None),
     ("Gross Width B", f"{B_raw:.3f} m"),
     ("Gross Length L", f"{L_raw:.3f} m"),
     ("Embedment Depth Df", f"{Df:.3f} m"),
     ("Soil Unit Weight gamma", f"{gamma:.2f} kN/m3"),
     ("Concrete Unit Weight gamma_c", f"{gamma_concrete:.2f} kN/m3"),
+    ("Load + Groundwater", None),
     ("Load Factor gamma_f", f"{load_factor:.2f}"),
     ("Groundwater Enabled", "Yes" if gw_active else "No"),
     ("Groundwater Depth", f"{dw:.3f} m" if gw_active else "N/A"),
@@ -512,12 +524,14 @@ else:
     pdf_input_rows.insert(2, ("Friction Angle phi'", f"{phi_deg:.1f} deg"))
 
 pdf_output_rows = [
+    ("Loads + Effective Area", None),
     ("Critical Horizontal Direction", h_direction),
     ("V_eccentricity", f"{V_eccentricity:.2f} kN"),
     ("V_capacity_check", f"{V_capacity_check:.2f} kN"),
     ("Effective Width B'", f"{B_prime:.3f} m"),
     ("Effective Length L'", f"{L_prime:.3f} m"),
     ("Effective Area A'", f"{A_prime:.3f} m2"),
+    ("Capacity Check", None),
     ("Factored Bearing Demand q", f"{q_factored:.2f} kPa"),
     ("Ultimate Geotechnical Capacity q_u", f"{qu:.2f} kPa"),
     ("Design Geotechnical Capacity q_d", f"{qd:.2f} kPa"),
