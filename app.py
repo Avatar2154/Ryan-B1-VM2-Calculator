@@ -88,19 +88,39 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
         pdf.drawString(right_col_x, y - 10, description)
         y -= row_height
 
+    def _two_column_list(rows):
+        nonlocal y
+        col_gap = 16
+        content_width = page_width - (2 * left_margin)
+        col_width = (content_width - col_gap) / 2
+        left_x = left_margin
+        right_x = left_margin + col_width + col_gap
+
+        for i in range(0, len(rows), 2):
+            if y < 56:
+                _new_page()
+            left_text = f"- {rows[i][0]}: {rows[i][1]}"
+            right_text = ""
+            if i + 1 < len(rows):
+                right_text = f"- {rows[i + 1][0]}: {rows[i + 1][1]}"
+
+            pdf.setFont("Helvetica", 10)
+            pdf.drawString(left_x, y, left_text[:80])
+            if right_text:
+                pdf.drawString(right_x, y, right_text[:80])
+            y -= line_height
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     _line("NZBC B1/VM2 Bearing Capacity Report", bold=True)
     _line(f"Generated: {timestamp}")
     y -= 6
 
     _line("Inputs", bold=True)
-    for label, value in input_rows:
-        _line(f"- {label}: {value}")
+    _two_column_list(input_rows)
 
     y -= 6
     _line("Bearing Capacity Check Outputs", bold=True)
-    for label, value in output_rows:
-        _line(f"- {label}: {value}")
+    _two_column_list(output_rows)
 
     y -= 6
     _line("Bearing Capacity Factor Summary", bold=True)
