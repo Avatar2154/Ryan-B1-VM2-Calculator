@@ -96,7 +96,8 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
         left_x = left_margin
         right_x = left_margin + col_width + col_gap
 
-        for i in range(0, len(rows), 2):
+        i = 0
+        while i < len(rows):
             # Heading rows are encoded as (heading_text, None).
             if rows[i][1] is None:
                 if y < 56:
@@ -104,6 +105,7 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
                 pdf.setFont("Helvetica-Bold", 10)
                 pdf.drawString(left_x, y, rows[i][0])
                 y -= line_height
+                i += 1
                 continue
 
             if y < 56:
@@ -118,6 +120,7 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
             if right_text:
                 pdf.drawString(right_x, y, right_text[:80])
             y -= line_height
+            i += 2 if right_text else 1
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     _line("NZBC B1/VM2 Bearing Capacity Report", bold=True)
@@ -495,33 +498,43 @@ res_col2.metric(label="Geotechnical Reduction Factor (𝜙_g)", value=f"{phi_g:.
 res_col3.metric(label="Design Geotechnical Capacity (q_d)", value=f"{qd:.1f} kPa")
 
 pdf_input_rows = [
-    ("Design + Soil", None),
+    ("Design Case", None),
     ("Design Case", design_case),
     ("Footing Type", footing_type),
-    ("Geometry + Material", None),
+    ("Drained Soil Properties", None),
+    ("Effective Cohesion c'", f"{c_calc:.2f} kPa"),
+    ("Friction Angle phi'", f"{phi_deg:.1f} deg"),
+    ("Soil Unit Weight gamma", f"{gamma:.2f} kN/m3"),
+    ("Footing Dimensions", None),
     ("Gross Width B", f"{B_raw:.3f} m"),
     ("Gross Length L", f"{L_raw:.3f} m"),
     ("Embedment Depth Df", f"{Df:.3f} m"),
-    ("Soil Unit Weight gamma", f"{gamma:.2f} kN/m3"),
+    ("Foundation Material", None),
     ("Concrete Unit Weight gamma_c", f"{gamma_concrete:.2f} kN/m3"),
-    ("Load + Groundwater", None),
+    ("Load Factor", None),
     ("Load Factor gamma_f", f"{load_factor:.2f}"),
-    ("Groundwater Enabled", "Yes" if gw_active else "No"),
-    ("Groundwater Depth", f"{dw:.3f} m" if gw_active else "N/A"),
-    ("Factored Vertical Load V*", f"{V_factored:.2f} kN"),
+    ("Design Actions (ULS)", None),
     ("Unfactored Vertical Load V", f"{V_unfactored:.2f} kN"),
+    ("Factored Vertical Load V*", f"{V_factored:.2f} kN"),
     ("Factored Moment M_B*", f"{M_B_factored:.2f} kN.m"),
     ("Factored Moment M_L*", f"{M_L_factored:.2f} kN.m"),
     ("Factored Horizontal Load H_B*", f"{H_factored_B:.2f} kN"),
     ("Factored Horizontal Load H_L*", f"{H_factored_L:.2f} kN"),
     ("Geotechnical Reduction Factor phi_g", f"{phi_g:.2f}"),
+    ("Groundwater Table", None),
+    ("Groundwater Enabled", "Yes" if gw_active else "No"),
+    ("Groundwater Depth", f"{dw:.3f} m" if gw_active else "N/A"),
 ]
 
 if design_case == "Seismic / Short-Term (Undrained)":
-    pdf_input_rows.insert(1, ("Undrained Shear Strength Su", f"{Su:.2f} kPa"))
+    pdf_input_rows[2:6] = [
+        ("Undrained Soil Properties", None),
+        ("Undrained Shear Strength Su", f"{Su:.2f} kPa"),
+        ("Friction Angle phi'", "0.0 deg"),
+        ("Soil Unit Weight gamma", f"{gamma:.2f} kN/m3"),
+    ]
 else:
-    pdf_input_rows.insert(1, ("Effective Cohesion c'", f"{c_calc:.2f} kPa"))
-    pdf_input_rows.insert(2, ("Friction Angle phi'", f"{phi_deg:.1f} deg"))
+    pass
 
 pdf_output_rows = [
     ("Loads + Effective Area", None),
