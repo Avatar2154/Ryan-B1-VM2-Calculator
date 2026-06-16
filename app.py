@@ -55,14 +55,14 @@ with col_geom:
     
     st.markdown("---")
     st.subheader("⚖️ Load Factor (Foundation Self-Weight Only)")
-    load_factor_note = st.info(
-        "**Load Factor Guidance for Foundation Self-Weight (NZS 1170.0):**\n\n"
-        "This load factor applies **ONLY to the self-weight of the foundation**, not the structural loads.\n\n"
-        "- **1.35**: Use if Permanent Action Only case (E_d = 1.35G) is critical\n"
-        "- **1.2**: Use if Permanent + Imposed case (E_d = 1.2G + 1.5Q) is critical\n\n"
-        "⚠️ **Confirm with your structural engineer which load case is critical for your project.**\n"
-        "The structural engineer will provide factored vertical loads already adjusted for their critical case."
-    )
+    with st.expander("ℹ️ Show Load Factor Guidance (NZS 1170.0)"):
+        st.info(
+            "This load factor applies **ONLY to the self-weight of the foundation**, not the structural loads.\n\n"
+            "- **1.35**: Use if Permanent Action Only case (E_d = 1.35G) is critical\n"
+            "- **1.2**: Use if Permanent + Imposed case (E_d = 1.2G + 1.5Q) is critical\n\n"
+            "⚠️ **Confirm with your structural engineer which load case is critical for your project.**\n"
+            "The structural engineer will provide factored vertical loads already adjusted for their critical case."
+        )
     load_factor = st.number_input("Load Factor for Foundation Self-Weight (γ_f)", min_value=1.0, value=1.35, step=0.05)
     
     st.markdown("---")
@@ -283,38 +283,38 @@ with load_summary_col2:
     st.write(f"*   **V_capacity_check: {V_capacity_check:.2f} kN**")
 
 st.write("---")
-st.subheader("📋 Moment & Eccentricity Analysis")
-st.caption("📌 **NZS 1170.0 Table 4.2.1:** Eccentricity uses 0.9 × unfactored vertical load with factored horizontal load (worst-case overturning)")
+with st.expander("📋 Moment & Eccentricity Analysis (click to open)"):
+    st.caption("📌 **NZS 1170.0 Table 4.2.1:** Eccentricity uses 0.9 × unfactored vertical load with factored horizontal load (worst-case overturning)")
 
-moment_col1, moment_col2, moment_col3 = st.columns(3)
+    moment_col1, moment_col2, moment_col3 = st.columns(3)
 
-with moment_col1:
-    st.markdown("**About B-axis (Width Direction):**")
-    st.write(f"*   Direct Moment (factored): {M_B_factored:.2f} kN·m")
-    st.write(f"*   Induced (H* × D_f): {M_B_induced:.2f} kN·m")
-    st.write(f"*   **Total M_B: {M_B_total:.2f} kN·m**")
-    st.write(f"*   Eccentricity e_B: {e_B:.4f} m")
-    st.write(f"*   Middle third limit (B/6): {B_raw/6:.4f} m")
-    middle_third_check_B = "✅ ACCEPTABLE" if e_B <= B_raw/6 else "❌ UNACCEPTABLE"
-    st.write(f"*   **{middle_third_check_B}**")
+    with moment_col1:
+        st.markdown("**About B-axis (Width Direction):**")
+        st.write(f"*   Direct Moment (factored): {M_B_factored:.2f} kN·m")
+        st.write(f"*   Induced (H* × D_f): {M_B_induced:.2f} kN·m")
+        st.write(f"*   **Total M_B: {M_B_total:.2f} kN·m**")
+        st.write(f"*   Eccentricity e_B: {e_B:.4f} m")
+        st.write(f"*   Middle third limit (B/6): {B_raw/6:.4f} m")
+        middle_third_check_B = "✅ ACCEPTABLE" if e_B <= B_raw/6 else "❌ UNACCEPTABLE"
+        st.write(f"*   **{middle_third_check_B}**")
 
-with moment_col2:
-    st.markdown("**About L-axis (Length Direction):**")
-    st.write(f"*   Direct Moment (factored): {M_L_factored:.2f} kN·m")
-    st.write(f"*   Induced (H* × D_f): {M_L_induced:.2f} kN·m")
-    st.write(f"*   **Total M_L: {M_L_total:.2f} kN·m**")
-    st.write(f"*   Eccentricity e_L: {e_L:.4f} m")
-    st.write(f"*   Middle third limit (L/6): {L_raw/6:.4f} m")
-    middle_third_check_L = "✅ ACCEPTABLE" if e_L <= L_raw/6 else "❌ UNACCEPTABLE"
-    st.write(f"*   **{middle_third_check_L}**")
+    with moment_col2:
+        st.markdown("**About L-axis (Length Direction):**")
+        st.write(f"*   Direct Moment (factored): {M_L_factored:.2f} kN·m")
+        st.write(f"*   Induced (H* × D_f): {M_L_induced:.2f} kN·m")
+        st.write(f"*   **Total M_L: {M_L_total:.2f} kN·m**")
+        st.write(f"*   Eccentricity e_L: {e_L:.4f} m")
+        st.write(f"*   Middle third limit (L/6): {L_raw/6:.4f} m")
+        middle_third_check_L = "✅ ACCEPTABLE" if e_L <= L_raw/6 else "❌ UNACCEPTABLE"
+        st.write(f"*   **{middle_third_check_L}**")
 
-with moment_col3:
-    st.markdown("**Effective Footing Dimensions (Meyerhof):**")
-    st.write(f"*   Gross Width: {B_raw:.3f} m")
-    st.write(f"*   **Effective Width (B'): {B_prime:.3f} m**")
-    st.write(f"*   Gross Length: {L_raw:.3f} m")
-    st.write(f"*   **Effective Length (L'): {L_prime:.3f} m**")
-    st.write(f"*   **Effective Area (A'): {A_prime:.3f} m²**")
+    with moment_col3:
+        st.markdown("**Effective Footing Dimensions (Meyerhof):**")
+        st.write(f"*   Gross Width: {B_raw:.3f} m")
+        st.write(f"*   **Effective Width (B'): {B_prime:.3f} m**")
+        st.write(f"*   Gross Length: {L_raw:.3f} m")
+        st.write(f"*   **Effective Length (L'): {L_prime:.3f} m**")
+        st.write(f"*   **Effective Area (A'): {A_prime:.3f} m²**")
 
 st.write("---")
 st.subheader("🔍 Bearing Pressure Check (Ultimate Limit State)")
