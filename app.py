@@ -1,5 +1,6 @@
 import streamlit as st
 import numpy as np
+import streamlit.components.v1 as components
 from io import BytesIO
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
@@ -44,6 +45,104 @@ def _build_pdf_report(input_rows, output_rows):
 
     pdf.save()
     return buffer.getvalue()
+
+
+def _build_printable_html_report(input_rows, output_rows):
+    """Create a print-friendly HTML report for browser printing."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    input_items = "".join([f"<tr><td>{label}</td><td>{value}</td></tr>" for label, value in input_rows])
+    output_items = "".join([f"<tr><td>{label}</td><td>{value}</td></tr>" for label, value in output_rows])
+
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>B1/VM2 Bearing Capacity Report</title>
+  <style>
+    body {{
+      font-family: Arial, sans-serif;
+      color: #1f2937;
+      margin: 24px;
+      line-height: 1.4;
+    }}
+    h1 {{
+      font-size: 22px;
+      margin: 0 0 8px 0;
+    }}
+    h2 {{
+      font-size: 16px;
+      margin: 22px 0 8px 0;
+      border-bottom: 1px solid #d1d5db;
+      padding-bottom: 4px;
+    }}
+    p.meta {{
+      margin: 0;
+      color: #4b5563;
+      font-size: 13px;
+    }}
+    table {{
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 13px;
+    }}
+    td {{
+      border: 1px solid #e5e7eb;
+      padding: 8px;
+      vertical-align: top;
+    }}
+    td:first-child {{
+      width: 46%;
+      font-weight: 600;
+      background: #f9fafb;
+    }}
+    .actions {{
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+    }}
+    button {{
+      border: 1px solid #9ca3af;
+      background: #ffffff;
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }}
+    @media print {{
+      .actions {{
+        display: none;
+      }}
+      body {{
+        margin: 12mm;
+      }}
+    }}
+  </style>
+</head>
+<body>
+  <h1>NZBC B1/VM2 Bearing Capacity Report</h1>
+  <p class="meta">Generated: {timestamp}</p>
+  <p class="meta">Prepared from current Streamlit inputs and computed outputs.</p>
+
+  <h2>Inputs</h2>
+  <table>
+    <tbody>
+      {input_items}
+    </tbody>
+  </table>
+
+  <h2>Bearing Capacity Check Outputs</h2>
+  <table>
+    <tbody>
+      {output_items}
+    </tbody>
+  </table>
+
+  <div class="actions">
+    <button onclick="window.print()">Print / Save as PDF</button>
+  </div>
+</body>
+</html>"""
 
 st.set_page_config(page_title="NZBC B1/VM2 Advanced Foundation Tool", page_icon="🇳🇿", layout="wide")
 
@@ -439,6 +538,17 @@ st.download_button(
     file_name="b1_vm2_bearing_capacity_report.pdf",
     mime="application/pdf",
 )
+
+html_report = _build_printable_html_report(pdf_input_rows, pdf_output_rows)
+st.download_button(
+    "🖨️ Download Print-Friendly HTML Report",
+    data=html_report,
+    file_name="b1_vm2_bearing_capacity_report.html",
+    mime="text/html",
+)
+with st.expander("🖥️ Preview Print-Friendly HTML Report"):
+    st.caption("Use browser print (Ctrl/Cmd+P) in this preview for hardcopy or Save as PDF.")
+    components.html(html_report, height=600, scrolling=True)
 
 with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-by-Step Multiplication)"):
     st.markdown("**Governing Ultimate Capacity Equation ($q_u$):**")
