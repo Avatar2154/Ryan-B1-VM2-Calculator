@@ -1,5 +1,148 @@
 import streamlit as st
 import numpy as np
+import streamlit.components.v1 as components
+from io import BytesIO
+from datetime import datetime
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+
+
+def _build_pdf_report(input_rows, output_rows):
+    """Create a simple multi-page PDF report for download."""
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    page_width, page_height = A4
+    left_margin = 40
+    line_height = 16
+    y = page_height - 48
+
+    def _new_page():
+        nonlocal y
+        pdf.showPage()
+        y = page_height - 48
+
+    def _line(text, bold=False):
+        nonlocal y
+        if y < 48:
+            _new_page()
+        pdf.setFont("Helvetica-Bold" if bold else "Helvetica", 10)
+        pdf.drawString(left_margin, y, text)
+        y -= line_height
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    _line("NZBC B1/VM2 Bearing Capacity Report", bold=True)
+    _line(f"Generated: {timestamp}")
+    y -= 6
+
+    _line("Inputs", bold=True)
+    for label, value in input_rows:
+        _line(f"- {label}: {value}")
+
+    y -= 6
+    _line("Bearing Capacity Check Outputs", bold=True)
+    for label, value in output_rows:
+        _line(f"- {label}: {value}")
+
+    pdf.save()
+    return buffer.getvalue()
+
+
+def _build_printable_html_report(input_rows, output_rows):
+    """Create a print-friendly HTML report for browser printing."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    input_items = "".join([f"<tr><td>{label}</td><td>{value}</td></tr>" for label, value in input_rows])
+    output_items = "".join([f"<tr><td>{label}</td><td>{value}</td></tr>" for label, value in output_rows])
+
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>B1/VM2 Bearing Capacity Report</title>
+  <style>
+    body {{
+      font-family: Arial, sans-serif;
+      color: #1f2937;
+      margin: 24px;
+      line-height: 1.4;
+    }}
+    h1 {{
+      font-size: 22px;
+      margin: 0 0 8px 0;
+    }}
+    h2 {{
+      font-size: 16px;
+      margin: 22px 0 8px 0;
+      border-bottom: 1px solid #d1d5db;
+      padding-bottom: 4px;
+    }}
+    p.meta {{
+      margin: 0;
+      color: #4b5563;
+      font-size: 13px;
+    }}
+    table {{
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 13px;
+    }}
+    td {{
+      border: 1px solid #e5e7eb;
+      padding: 8px;
+      vertical-align: top;
+    }}
+    td:first-child {{
+      width: 46%;
+      font-weight: 600;
+      background: #f9fafb;
+    }}
+    .actions {{
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+    }}
+    button {{
+      border: 1px solid #9ca3af;
+      background: #ffffff;
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }}
+    @media print {{
+      .actions {{
+        display: none;
+      }}
+      body {{
+        margin: 12mm;
+      }}
+    }}
+  </style>
+</head>
+<body>
+  <h1>NZBC B1/VM2 Bearing Capacity Report</h1>
+  <p class="meta">Generated: {timestamp}</p>
+  <p class="meta">Prepared from current Streamlit inputs and computed outputs.</p>
+
+  <h2>Inputs</h2>
+  <table>
+    <tbody>
+      {input_items}
+    </tbody>
+  </table>
+
+  <h2>Bearing Capacity Check Outputs</h2>
+  <table>
+    <tbody>
+      {output_items}
+    </tbody>
+  </table>
+
+  <div class="actions">
+    <button onclick="window.print()">Print / Save as PDF</button>
+  </div>
+</body>
+</html>"""
 
 st.set_page_config(page_title="NZBC B1/VM2 Advanced Foundation Tool", page_icon="🇳🇿", layout="wide")
 
@@ -347,6 +490,65 @@ res_col1, res_col2, res_col3 = st.columns(3)
 res_col1.metric(label="Ultimate Geotechnical Capacity (q_u)", value=f"{qu:.1f} kPa")
 res_col2.metric(label="Geotechnical Reduction Factor (𝜙_g)", value=f"{phi_g:.2f}")
 res_col3.metric(label="Design Geotechnical Capacity (q_d)", value=f"{qd:.1f} kPa")
+
+pdf_input_rows = [
+    ("Design Case", design_case),
+    ("Footing Type", footing_type),
+    ("Gross Width B", f"{B_raw:.3f} m"),
+    ("Gross Length L", f"{L_raw:.3f} m"),
+    ("Embedment Depth Df", f"{Df:.3f} m"),
+    ("Soil Unit Weight gamma", f"{gamma:.2f} kN/m3"),
+    ("Concrete Unit Weight gamma_c", f"{gamma_concrete:.2f} kN/m3"),
+    ("Load Factor gamma_f", f"{load_factor:.2f}"),
+    ("Groundwater Enabled", "Yes" if gw_active else "No"),
+    ("Groundwater Depth", f"{dw:.3f} m" if gw_active else "N/A"),
+    ("Factored Vertical Load V*", f"{V_factored:.2f} kN"),
+    ("Unfactored Vertical Load V", f"{V_unfactored:.2f} kN"),
+    ("Factored Moment M_B*", f"{M_B_factored:.2f} kN.m"),
+    ("Factored Moment M_L*", f"{M_L_factored:.2f} kN.m"),
+    ("Factored Horizontal Load H_B*", f"{H_factored_B:.2f} kN"),
+    ("Factored Horizontal Load H_L*", f"{H_factored_L:.2f} kN"),
+    ("Geotechnical Reduction Factor phi_g", f"{phi_g:.2f}"),
+]
+
+if design_case == "Seismic / Short-Term (Undrained)":
+    pdf_input_rows.insert(1, ("Undrained Shear Strength Su", f"{Su:.2f} kPa"))
+else:
+    pdf_input_rows.insert(1, ("Effective Cohesion c'", f"{c_calc:.2f} kPa"))
+    pdf_input_rows.insert(2, ("Friction Angle phi'", f"{phi_deg:.1f} deg"))
+
+pdf_output_rows = [
+    ("Critical Horizontal Direction", h_direction),
+    ("V_eccentricity", f"{V_eccentricity:.2f} kN"),
+    ("V_capacity_check", f"{V_capacity_check:.2f} kN"),
+    ("Effective Width B'", f"{B_prime:.3f} m"),
+    ("Effective Length L'", f"{L_prime:.3f} m"),
+    ("Effective Area A'", f"{A_prime:.3f} m2"),
+    ("Factored Bearing Demand q", f"{q_factored:.2f} kPa"),
+    ("Ultimate Geotechnical Capacity q_u", f"{qu:.2f} kPa"),
+    ("Design Geotechnical Capacity q_d", f"{qd:.2f} kPa"),
+    ("Capacity Demand Ratio CDR", f"{CDR:.3f}"),
+    ("Bearing Capacity Status", "ADEQUATE" if CDR >= 1.0 else "INADEQUATE"),
+]
+
+pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows)
+st.download_button(
+    "📄 Download PDF Report (Inputs + Bearing Capacity Outputs)",
+    data=pdf_data,
+    file_name="b1_vm2_bearing_capacity_report.pdf",
+    mime="application/pdf",
+)
+
+html_report = _build_printable_html_report(pdf_input_rows, pdf_output_rows)
+st.download_button(
+    "🖨️ Download Print-Friendly HTML Report",
+    data=html_report,
+    file_name="b1_vm2_bearing_capacity_report.html",
+    mime="text/html",
+)
+with st.expander("🖥️ Preview Print-Friendly HTML Report"):
+    st.caption("Use browser print (Ctrl/Cmd+P) in this preview for hardcopy or Save as PDF.")
+    components.html(html_report, height=600, scrolling=True)
 
 with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-by-Step Multiplication)"):
     st.markdown("**Governing Ultimate Capacity Equation ($q_u$):**")
