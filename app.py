@@ -1,5 +1,49 @@
 import streamlit as st
 import numpy as np
+from io import BytesIO
+from datetime import datetime
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+
+
+def _build_pdf_report(input_rows, output_rows):
+    """Create a simple multi-page PDF report for download."""
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    page_width, page_height = A4
+    left_margin = 40
+    line_height = 16
+    y = page_height - 48
+
+    def _new_page():
+        nonlocal y
+        pdf.showPage()
+        y = page_height - 48
+
+    def _line(text, bold=False):
+        nonlocal y
+        if y < 48:
+            _new_page()
+        pdf.setFont("Helvetica-Bold" if bold else "Helvetica", 10)
+        pdf.drawString(left_margin, y, text)
+        y -= line_height
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    _line("NZBC B1/VM2 Bearing Capacity Report", bold=True)
+    _line(f"Generated: {timestamp}")
+    y -= 6
+
+    _line("Inputs", bold=True)
+    for label, value in input_rows:
+        _line(f"- {label}: {value}")
+
+    y -= 6
+    _line("Bearing Capacity Check Outputs", bold=True)
+    for label, value in output_rows:
+        _line(f"- {label}: {value}")
+
+    pdf.save()
+    return buffer.getvalue()
 
 st.set_page_config(page_title="NZBC B1/VM2 Advanced Foundation Tool", page_icon="🇳🇿", layout="wide")
 
@@ -347,6 +391,54 @@ res_col1, res_col2, res_col3 = st.columns(3)
 res_col1.metric(label="Ultimate Geotechnical Capacity (q_u)", value=f"{qu:.1f} kPa")
 res_col2.metric(label="Geotechnical Reduction Factor (𝜙_g)", value=f"{phi_g:.2f}")
 res_col3.metric(label="Design Geotechnical Capacity (q_d)", value=f"{qd:.1f} kPa")
+
+pdf_input_rows = [
+    ("Design Case", design_case),
+    ("Footing Type", footing_type),
+    ("Gross Width B", f"{B_raw:.3f} m"),
+    ("Gross Length L", f"{L_raw:.3f} m"),
+    ("Embedment Depth Df", f"{Df:.3f} m"),
+    ("Soil Unit Weight gamma", f"{gamma:.2f} kN/m3"),
+    ("Concrete Unit Weight gamma_c", f"{gamma_concrete:.2f} kN/m3"),
+    ("Load Factor gamma_f", f"{load_factor:.2f}"),
+    ("Groundwater Enabled", "Yes" if gw_active else "No"),
+    ("Groundwater Depth", f"{dw:.3f} m" if gw_active else "N/A"),
+    ("Factored Vertical Load V*", f"{V_factored:.2f} kN"),
+    ("Unfactored Vertical Load V", f"{V_unfactored:.2f} kN"),
+    ("Factored Moment M_B*", f"{M_B_factored:.2f} kN.m"),
+    ("Factored Moment M_L*", f"{M_L_factored:.2f} kN.m"),
+    ("Factored Horizontal Load H_B*", f"{H_factored_B:.2f} kN"),
+    ("Factored Horizontal Load H_L*", f"{H_factored_L:.2f} kN"),
+    ("Geotechnical Reduction Factor phi_g", f"{phi_g:.2f}"),
+]
+
+if design_case == "Seismic / Short-Term (Undrained)":
+    pdf_input_rows.insert(1, ("Undrained Shear Strength Su", f"{Su:.2f} kPa"))
+else:
+    pdf_input_rows.insert(1, ("Effective Cohesion c'", f"{c_calc:.2f} kPa"))
+    pdf_input_rows.insert(2, ("Friction Angle phi'", f"{phi_deg:.1f} deg"))
+
+pdf_output_rows = [
+    ("Critical Horizontal Direction", h_direction),
+    ("V_eccentricity", f"{V_eccentricity:.2f} kN"),
+    ("V_capacity_check", f"{V_capacity_check:.2f} kN"),
+    ("Effective Width B'", f"{B_prime:.3f} m"),
+    ("Effective Length L'", f"{L_prime:.3f} m"),
+    ("Effective Area A'", f"{A_prime:.3f} m2"),
+    ("Factored Bearing Demand q", f"{q_factored:.2f} kPa"),
+    ("Ultimate Geotechnical Capacity q_u", f"{qu:.2f} kPa"),
+    ("Design Geotechnical Capacity q_d", f"{qd:.2f} kPa"),
+    ("Capacity Demand Ratio CDR", f"{CDR:.3f}"),
+    ("Bearing Capacity Status", "ADEQUATE" if CDR >= 1.0 else "INADEQUATE"),
+]
+
+pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows)
+st.download_button(
+    "📄 Download PDF Report (Inputs + Bearing Capacity Outputs)",
+    data=pdf_data,
+    file_name="b1_vm2_bearing_capacity_report.pdf",
+    mime="application/pdf",
+)
 
 with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-by-Step Multiplication)"):
     st.markdown("**Governing Ultimate Capacity Equation ($q_u$):**")
