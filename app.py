@@ -1,13 +1,12 @@
 import streamlit as st
 import numpy as np
-import streamlit.components.v1 as components
 from io import BytesIO
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
 
-def _build_pdf_report(input_rows, output_rows):
+def _build_pdf_report(input_rows, output_rows, equation_rows):
     """Create a simple multi-page PDF report for download."""
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
@@ -43,106 +42,13 @@ def _build_pdf_report(input_rows, output_rows):
     for label, value in output_rows:
         _line(f"- {label}: {value}")
 
+    y -= 6
+    _line("Full Calculation Equation Expansion", bold=True)
+    for label, value in equation_rows:
+        _line(f"- {label}: {value}")
+
     pdf.save()
     return buffer.getvalue()
-
-
-def _build_printable_html_report(input_rows, output_rows):
-    """Create a print-friendly HTML report for browser printing."""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    input_items = "".join([f"<tr><td>{label}</td><td>{value}</td></tr>" for label, value in input_rows])
-    output_items = "".join([f"<tr><td>{label}</td><td>{value}</td></tr>" for label, value in output_rows])
-
-    return f"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>B1/VM2 Bearing Capacity Report</title>
-  <style>
-    body {{
-      font-family: Arial, sans-serif;
-      color: #1f2937;
-      margin: 24px;
-      line-height: 1.4;
-    }}
-    h1 {{
-      font-size: 22px;
-      margin: 0 0 8px 0;
-    }}
-    h2 {{
-      font-size: 16px;
-      margin: 22px 0 8px 0;
-      border-bottom: 1px solid #d1d5db;
-      padding-bottom: 4px;
-    }}
-    p.meta {{
-      margin: 0;
-      color: #4b5563;
-      font-size: 13px;
-    }}
-    table {{
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 8px;
-      font-size: 13px;
-    }}
-    td {{
-      border: 1px solid #e5e7eb;
-      padding: 8px;
-      vertical-align: top;
-    }}
-    td:first-child {{
-      width: 46%;
-      font-weight: 600;
-      background: #f9fafb;
-    }}
-    .actions {{
-      margin-top: 18px;
-      display: flex;
-      gap: 10px;
-    }}
-    button {{
-      border: 1px solid #9ca3af;
-      background: #ffffff;
-      border-radius: 6px;
-      padding: 8px 12px;
-      cursor: pointer;
-    }}
-    @media print {{
-      .actions {{
-        display: none;
-      }}
-      body {{
-        margin: 12mm;
-      }}
-    }}
-  </style>
-</head>
-<body>
-  <h1>NZBC B1/VM2 Bearing Capacity Report</h1>
-  <p class="meta">Generated: {timestamp}</p>
-  <p class="meta">Prepared from current Streamlit inputs and computed outputs.</p>
-
-  <h2>Inputs</h2>
-  <table>
-    <tbody>
-      {input_items}
-    </tbody>
-  </table>
-
-  <h2>Bearing Capacity Check Outputs</h2>
-  <table>
-    <tbody>
-      {output_items}
-    </tbody>
-  </table>
-
-  <div class="actions">
-    <button onclick="window.print()">Print / Save as PDF</button>
-  </div>
-</body>
-</html>"""
 
 st.set_page_config(page_title="NZBC B1/VM2 Advanced Foundation Tool", page_icon="🇳🇿", layout="wide")
 
@@ -531,24 +437,17 @@ pdf_output_rows = [
     ("Bearing Capacity Status", "ADEQUATE" if CDR >= 1.0 else "INADEQUATE"),
 ]
 
-pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows)
-st.download_button(
-    "📄 Download PDF Report (Inputs + Bearing Capacity Outputs)",
-    data=pdf_data,
-    file_name="b1_vm2_bearing_capacity_report.pdf",
-    mime="application/pdf",
-)
+equation_rows = [
+    ("Governing Equation", "q_u = (c*Nc*l_cs*l_cd*l_ic) + (q*Nq*l_qs*l_qd*l_iq) + (0.5*gamma'*B'*N_gamma*l_gamma_s*l_gamma_d*l_i_gamma)"),
+    ("Expanded Multiplication", f"q_u = ({c_calc:.2f}*{Nc:.2f}*{lambda_cs:.2f}*{lambda_cd:.2f}*{lambda_ic:.2f}) + ({q_surcharge:.2f}*{Nq:.2f}*{lambda_qs:.2f}*{lambda_qd:.2f}*{lambda_iq:.2f}) + (0.5*{gamma_prime:.2f}*{B_prime:.2f}*{Ngamma:.2f}*{lambda_gammas:.2f}*{lambda_gammad:.2f}*{lambda_igamma:.2f})"),
+    ("Cohesion Term", f"{term1:.2f} kPa"),
+    ("Surcharge Term", f"{term2:.2f} kPa"),
+    ("Soil Weight Term", f"{term3:.2f} kPa"),
+    ("Summed Ultimate Capacity q_u", f"{qu:.2f} kPa"),
+    ("Design Verification", f"q_d = {qu:.2f} * {phi_g:.2f} = {qd:.2f} kPa"),
+]
 
-html_report = _build_printable_html_report(pdf_input_rows, pdf_output_rows)
-st.download_button(
-    "🖨️ Download Print-Friendly HTML Report",
-    data=html_report,
-    file_name="b1_vm2_bearing_capacity_report.html",
-    mime="text/html",
-)
-with st.expander("🖥️ Preview Print-Friendly HTML Report"):
-    st.caption("Use browser print (Ctrl/Cmd+P) in this preview for hardcopy or Save as PDF.")
-    components.html(html_report, height=600, scrolling=True)
+pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows, equation_rows)
 
 with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-by-Step Multiplication)"):
     st.markdown("**Governing Ultimate Capacity Equation ($q_u$):**")
@@ -598,5 +497,12 @@ with audit_col3:
     st.write(rf"*   $\lambda_{{ic}}$ (Cohesion Inclination): {lambda_ic:.3f}")
     st.write(rf"*   $\lambda_{{iq}}$ (Surcharge Inclination): {lambda_iq:.3f}")
     st.write(rf"*   $\lambda_{{i\gamma}}$ (Weight Inclination): {lambda_igamma:.3f}")
+
+st.download_button(
+    "📄 Download PDF Report (Inputs + Outputs + Full Equation Expansion)",
+    data=pdf_data,
+    file_name="b1_vm2_bearing_capacity_report.pdf",
+    mime="application/pdf",
+)
 
 
