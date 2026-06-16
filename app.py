@@ -63,6 +63,31 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
         )
         y -= (image_height + 6)
 
+    def _factor_row(symbol, value, description):
+        nonlocal y
+        image_height = 22
+        fig_height = 0.45
+        row_height = image_height + 4
+        if y < row_height + 20:
+            _new_page()
+
+        equation_image = ImageReader(_render_equation_image(f"{symbol} = {value}", fig_height=fig_height))
+        left_col_width = (page_width - (2 * left_margin)) * 0.45
+        right_col_x = left_margin + left_col_width + 8
+
+        pdf.drawImage(
+            equation_image,
+            left_margin,
+            y - image_height + 2,
+            width=left_col_width,
+            height=image_height,
+            preserveAspectRatio=True,
+            mask="auto",
+        )
+        pdf.setFont("Helvetica", 10)
+        pdf.drawString(right_col_x, y - 10, description)
+        y -= row_height
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     _line("NZBC B1/VM2 Bearing Capacity Report", bold=True)
     _line(f"Generated: {timestamp}")
@@ -78,10 +103,9 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
         _line(f"- {label}: {value}")
 
     y -= 6
-    _line("Bearing Capacity and Shape Factor Summary", bold=True)
+    _line("Bearing Capacity Factor Summary", bold=True)
     for symbol, value, description in factor_rows:
-        _math_line(f"{symbol} = {value}", image_height=22, fig_height=0.45)
-        _line(f"  {description}")
+        _factor_row(symbol, value, description)
 
     y -= 6
     _line("Full Calculation Equation Expansion", bold=True)
