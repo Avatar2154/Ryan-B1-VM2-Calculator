@@ -24,7 +24,7 @@ def _render_equation_image(equation_text):
     return image_buffer
 
 
-def _build_pdf_report(input_rows, output_rows, equation_rows, equation_latex_rows):
+def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equation_latex_rows):
     """Create a simple multi-page PDF report for download."""
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
@@ -76,6 +76,11 @@ def _build_pdf_report(input_rows, output_rows, equation_rows, equation_latex_row
     y -= 6
     _line("Bearing Capacity Check Outputs", bold=True)
     for label, value in output_rows:
+        _line(f"- {label}: {value}")
+
+    y -= 6
+    _line("Bearing Capacity and Shape Factor Summary", bold=True)
+    for label, value in factor_rows:
         _line(f"- {label}: {value}")
 
     y -= 6
@@ -495,7 +500,23 @@ equation_latex_rows = [
     ),
 ]
 
-pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows, equation_rows, equation_latex_rows)
+pdf_factor_rows = [
+    ("N_c (Cohesion Multiplier)", f"{Nc:.3f}"),
+    ("N_q (Surcharge Multiplier)", f"{Nq:.3f}"),
+    ("N_gamma (Self-Weight Multiplier)", f"{Ngamma:.3f}"),
+    ("lambda_cs (Cohesion Shape)", f"{lambda_cs:.3f}"),
+    ("lambda_qs (Surcharge Shape)", f"{lambda_qs:.3f}"),
+    ("lambda_gamma_s (Soil Weight Shape)", f"{lambda_gammas:.3f}"),
+    ("lambda_cd (Cohesion Depth)", f"{lambda_cd:.3f}"),
+    ("lambda_qd (Surcharge Depth)", f"{lambda_qd:.3f}"),
+    ("lambda_gamma_d (Soil Weight Depth)", f"{lambda_gammad:.3f}"),
+    ("Load Exponent m", f"{exponent_m:.3f}"),
+    ("lambda_ic (Cohesion Inclination)", f"{lambda_ic:.3f}"),
+    ("lambda_iq (Surcharge Inclination)", f"{lambda_iq:.3f}"),
+    ("lambda_i_gamma (Soil Weight Inclination)", f"{lambda_igamma:.3f}"),
+]
+
+pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows, pdf_factor_rows, equation_rows, equation_latex_rows)
 
 with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-by-Step Multiplication)"):
     st.markdown("**Governing Ultimate Capacity Equation ($q_u$):**")
