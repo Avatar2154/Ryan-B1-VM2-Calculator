@@ -63,7 +63,7 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
         )
         y -= (image_height + 6)
 
-    def _factor_row(symbol, value, description):
+    def _factor_row(equation_text, description):
         nonlocal y
         image_height = 22
         fig_height = 0.45
@@ -71,9 +71,9 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
         if y < row_height + 20:
             _new_page()
 
-        equation_image = ImageReader(_render_equation_image(f"{symbol} = {value}", fig_height=fig_height))
-        left_col_width = (page_width - (2 * left_margin)) * 0.45
-        right_col_x = left_margin + left_col_width + 8
+        equation_image = ImageReader(_render_equation_image(equation_text, fig_height=fig_height))
+        left_col_width = (page_width - (2 * left_margin)) * 0.62
+        right_col_x = left_margin + left_col_width + 4
 
         pdf.drawImage(
             equation_image,
@@ -104,8 +104,8 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
 
     y -= 6
     _line("Bearing Capacity Factor Summary", bold=True)
-    for symbol, value, description in factor_rows:
-        _factor_row(symbol, value, description)
+    for equation_text, description in factor_rows:
+        _factor_row(equation_text, description)
 
     y -= 6
     _line("Full Calculation Equation Expansion", bold=True)
@@ -525,19 +525,26 @@ equation_latex_rows = [
 ]
 
 pdf_factor_rows = [
-    (r"N_c", f"{Nc:.3f}", "Cohesion multiplier."),
-    (r"N_q", f"{Nq:.3f}", "Surcharge multiplier."),
-    (r"N_\gamma", f"{Ngamma:.3f}", "Self-weight multiplier."),
-    (r"\lambda_{cs}", f"{lambda_cs:.3f}", "Cohesion shape factor."),
-    (r"\lambda_{qs}", f"{lambda_qs:.3f}", "Surcharge shape factor."),
-    (r"\lambda_{\gamma s}", f"{lambda_gammas:.3f}", "Soil weight shape modifier."),
-    (r"\lambda_{cd}", f"{lambda_cd:.3f}", "Cohesion depth factor."),
-    (r"\lambda_{qd}", f"{lambda_qd:.3f}", "Surcharge depth factor."),
-    (r"\lambda_{\gamma d}", f"{lambda_gammad:.3f}", "Weight depth factor."),
-    (r"m", f"{exponent_m:.3f}", "Load exponent."),
-    (r"\lambda_{ic}", f"{lambda_ic:.3f}", "Cohesion inclination factor."),
-    (r"\lambda_{iq}", f"{lambda_iq:.3f}", "Surcharge inclination factor."),
-    (r"\lambda_{i\gamma}", f"{lambda_igamma:.3f}", "Weight inclination factor."),
+    (
+        rf"N_c={Nc:.3f},\ N_q={Nq:.3f},\ N_\gamma={Ngamma:.3f}",
+        "Cohesion, surcharge, self-weight multipliers.",
+    ),
+    (
+        rf"\lambda_{{cs}}={lambda_cs:.3f},\ \lambda_{{qs}}={lambda_qs:.3f},\ \lambda_{{\gamma s}}={lambda_gammas:.3f}",
+        "Shape factors.",
+    ),
+    (
+        rf"\lambda_{{cd}}={lambda_cd:.3f},\ \lambda_{{qd}}={lambda_qd:.3f},\ \lambda_{{\gamma d}}={lambda_gammad:.3f}",
+        "Depth factors.",
+    ),
+    (
+        rf"\lambda_{{ic}}={lambda_ic:.3f},\ \lambda_{{iq}}={lambda_iq:.3f},\ \lambda_{{i\gamma}}={lambda_igamma:.3f}",
+        "Inclination factors.",
+    ),
+    (
+        rf"m={exponent_m:.3f}",
+        "Load exponent.",
+    ),
 ]
 
 pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows, pdf_factor_rows, equation_rows, equation_latex_rows)
