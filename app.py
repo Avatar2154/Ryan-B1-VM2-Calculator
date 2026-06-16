@@ -79,8 +79,9 @@ def _build_pdf_report(input_rows, output_rows, factor_rows, equation_rows, equat
 
     y -= 6
     _line("Bearing Capacity and Shape Factor Summary", bold=True)
-    for symbol, value in factor_rows:
+    for symbol, value, description in factor_rows:
         _math_line(f"{symbol} = {value}", image_height=22, fig_height=0.45)
+        _line(f"  {description}")
 
     y -= 6
     _line("Full Calculation Equation Expansion", bold=True)
@@ -500,19 +501,19 @@ equation_latex_rows = [
 ]
 
 pdf_factor_rows = [
-    (r"N_c", f"{Nc:.3f}"),
-    (r"N_q", f"{Nq:.3f}"),
-    (r"N_\gamma", f"{Ngamma:.3f}"),
-    (r"\lambda_{cs}", f"{lambda_cs:.3f}"),
-    (r"\lambda_{qs}", f"{lambda_qs:.3f}"),
-    (r"\lambda_{\gamma s}", f"{lambda_gammas:.3f}"),
-    (r"\lambda_{cd}", f"{lambda_cd:.3f}"),
-    (r"\lambda_{qd}", f"{lambda_qd:.3f}"),
-    (r"\lambda_{\gamma d}", f"{lambda_gammad:.3f}"),
-    (r"m", f"{exponent_m:.3f}"),
-    (r"\lambda_{ic}", f"{lambda_ic:.3f}"),
-    (r"\lambda_{iq}", f"{lambda_iq:.3f}"),
-    (r"\lambda_{i\gamma}", f"{lambda_igamma:.3f}"),
+    (r"N_c", f"{Nc:.3f}", "Cohesion multiplier."),
+    (r"N_q", f"{Nq:.3f}", "Surcharge multiplier."),
+    (r"N_\gamma", f"{Ngamma:.3f}", "Self-weight multiplier."),
+    (r"\lambda_{cs}", f"{lambda_cs:.3f}", "Cohesion shape factor."),
+    (r"\lambda_{qs}", f"{lambda_qs:.3f}", "Surcharge shape factor."),
+    (r"\lambda_{\gamma s}", f"{lambda_gammas:.3f}", "Soil weight shape modifier."),
+    (r"\lambda_{cd}", f"{lambda_cd:.3f}", "Cohesion depth factor."),
+    (r"\lambda_{qd}", f"{lambda_qd:.3f}", "Surcharge depth factor."),
+    (r"\lambda_{\gamma d}", f"{lambda_gammad:.3f}", "Weight depth factor."),
+    (r"m", f"{exponent_m:.3f}", "Load exponent."),
+    (r"\lambda_{ic}", f"{lambda_ic:.3f}", "Cohesion inclination factor."),
+    (r"\lambda_{iq}", f"{lambda_iq:.3f}", "Surcharge inclination factor."),
+    (r"\lambda_{i\gamma}", f"{lambda_igamma:.3f}", "Weight inclination factor."),
 ]
 
 pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows, pdf_factor_rows, equation_rows, equation_latex_rows)
@@ -566,6 +567,7 @@ with audit_col3:
     st.write(rf"*   $\lambda_{{iq}}$ (Surcharge Inclination): {lambda_iq:.3f}")
     st.write(rf"*   $\lambda_{{i\gamma}}$ (Weight Inclination): {lambda_igamma:.3f}")
 
+st.subheader("📄 Download PDF Report")
 st.download_button(
     "📄 Download PDF Report (Inputs + Outputs + Full Equation Expansion)",
     data=pdf_data,
