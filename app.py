@@ -257,7 +257,13 @@ with col_loads:
     st.header("🏋️ 3. Design Actions (ULS)")
     
     st.subheader("📥 Vertical Loads (from Structural Engineer)")
-    V_unfactored = st.number_input("Unfactored Vertical Load, V (kN)", min_value=0.0, value=300.0, step=10.0, help="Unfactored structural load (typically 0.9G)")
+    V_unfactored = st.number_input(
+        "Unfactored Vertical Load, V (kN)",
+        min_value=0.0,
+        value=300.0,
+        step=10.0,
+        help="Unfactored vertical load provided by the structural engineer (typically 1.0G).",
+    )
     V_factored = st.number_input("Factored Vertical Load, V* (kN)", min_value=0.0, value=400.0, step=10.0, help="Factored design load (already factored by structural engineer)")
     
     st.markdown("**Bending Moments (Factored - from Structural Engineer):**")
@@ -322,6 +328,12 @@ if B_prime <= 0 or L_prime <= 0:
 
 A_prime = B_prime * L_prime
 phi_rad = np.radians(phi_deg)
+
+if L_prime < B_prime:
+    st.warning(
+        "⚠️ Effective length is currently governing (L' < B'). The bearing-capacity formulation is width-based (B'). "
+        "Review footing orientation or perform a manual directional check."
+    )
 
 
 # 5. Advanced Groundwater Surcharge Rules
