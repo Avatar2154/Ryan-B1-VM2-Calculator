@@ -161,11 +161,29 @@ Adheres to the **New Zealand Building Code Verification Method B1/VM2**.
 Automates effective area eccentricities, load orientations, and short/long-term soil behaviors.
 """)
 
+with st.expander("ℹ️ Scope & Limitations (B1/VM2 §2.2)", expanded=False):
+    st.warning(
+        "**This tool checks ULS bearing capacity only** (B1/VM2 Subsection 2.2).\n\n"
+        "**Not included:** sliding resistance (§2.3), settlement/serviceability, liquefaction, "
+        "punch-through on layered profiles, or pile/deep foundation design (Part 3).\n\n"
+        "Results require review by a competent geotechnical engineer before use in a building "
+        "consent application (B1/VM2 §1.1.3)."
+    )
+
 # --- Side-by-Side Configuration Columns ---
 col_case, col_geom, col_loads = st.columns(3)
 
 with col_case:
     st.header("⏳ 1. Design Case & Soil")
+    with st.expander("ℹ️ Which design case should I use?"):
+        st.markdown(
+            "| Case | When to use | Soil parameters |\n"
+            "| --- | --- | --- |\n"
+            "| **Static (drained)** | Permanent/long-term ULS, wind, non-seismic combinations | c′, φ′ from effective-stress lab testing |\n"
+            "| **Seismic / short-term (undrained)** | Earthquake ULS, rapid loading on clay | Su from UU triaxial, field vane, or CPT correlation |\n\n"
+            "Do **not** mix drained and undrained parameters in the same run — B1/VM2 treats these "
+            "as separate analysis paths (Subsection 2.2.2)."
+        )
     design_case = st.selectbox(
         "Design Load Case", 
         ["Static (Long-Term / Drained)", "Seismic / Short-Term (Undrained)"],
@@ -175,28 +193,87 @@ with col_case:
     st.markdown("---")
     if design_case == "Seismic / Short-Term (Undrained)":
         st.subheader("💧 Cohesive Soil Properties")
-        Su = st.number_input("Undrained Shear Strength, Su (kPa)", min_value=1.0, value=50.0, step=5.0)
+        Su = st.number_input(
+            "Undrained Shear Strength, Su (kPa)",
+            min_value=1.0,
+            value=50.0,
+            step=5.0,
+            help="Characteristic or design Su from UU triaxial, field vane, or CPT correlation. State the test method in your report.",
+        )
         c_calc = Su
         phi_deg = 0.0
         st.caption("🔒 System locked to Undrained State (ϕ = 0° as per B1/VM2 guidelines).")
+        st.caption(
+            "**Su sourcing:** Use undrained strength from site investigation — not drained c′/φ′ values. "
+            "Confirm whether Su is characteristic or factored per your geotechnical report."
+        )
     else:
         st.subheader("🪨 Drained Soil Properties")
-        c_calc = st.number_input("Effective Cohesion, c' (kPa)", min_value=0.0, value=5.0, step=1.0)
-        phi_deg = st.slider("Effective Internal Friction Angle, ϕ' (degrees)", min_value=0, max_value=45, value=30, step=1)
+        c_calc = st.number_input(
+            "Effective Cohesion, c' (kPa)",
+            min_value=0.0,
+            value=5.0,
+            step=1.0,
+            help="Effective-stress cohesion from CD triaxial or direct shear testing.",
+        )
+        phi_deg = st.slider(
+            "Effective Internal Friction Angle, ϕ' (degrees)",
+            min_value=0,
+            max_value=45,
+            value=30,
+            step=1,
+            help="Effective-stress friction angle from CD triaxial or direct shear testing.",
+        )
+        st.caption(
+            "**c′ and φ′ sourcing:** Use effective-stress lab results — not total-stress Su values. "
+            "For sand/gravel, c′ is typically 0 kPa."
+        )
     
-    gamma = st.number_input("Soil Total Unit Weight, γ (kN/m³)", min_value=10.0, value=18.0, step=0.5)
+    gamma = st.number_input(
+        "Soil Total Unit Weight, γ (kN/m³)",
+        min_value=10.0,
+        value=18.0,
+        step=0.5,
+        help="Moist/total unit weight above the water table. The app applies γ′ = γ − γw below the water table when groundwater is enabled.",
+    )
 
 with col_geom:
     st.header("📐 2. Footing Dimensions")
     footing_type = st.selectbox("Footing Shape Configuration", ["Rectangular Pad", "Continuous Strip"])
-    B_raw = st.number_input("Gross Footing Width, B (m)", min_value=0.1, value=1.5, step=0.1)
+    st.caption(
+        "**B** = footing width in the direction being checked. **L** = length perpendicular to B. "
+        "For a column pad, B is usually the shorter plan dimension unless checking a specific load direction."
+    )
+    B_raw = st.number_input(
+        "Gross Footing Width, B (m)",
+        min_value=0.1,
+        value=1.5,
+        step=0.1,
+        help="Gross plan width before eccentricity reduction.",
+    )
     
     if footing_type == "Rectangular Pad":
-        L_raw = st.number_input("Gross Footing Length, L (m)", min_value=0.1, value=2.0, step=0.1)
+        L_raw = st.number_input(
+            "Gross Footing Length, L (m)",
+            min_value=0.1,
+            value=2.0,
+            step=0.1,
+            help="Gross plan length perpendicular to B.",
+        )
     else:
         L_raw = 100000.0  # Strip footing approximation
+        st.warning(
+            "⚠️ **Strip mode** assumes L/B → ∞. Valid for continuous wall footings only — "
+            "do not use for isolated column pads."
+        )
         
-    Df = st.number_input("Foundation Embedment Depth, Df (m)", min_value=0.0, value=0.6, step=0.1)
+    Df = st.number_input(
+        "Foundation Embedment Depth, Df (m)",
+        min_value=0.0,
+        value=0.6,
+        step=0.1,
+        help="Vertical depth from finished ground surface to the underside of the footing. Include lean-mix or blinding if part of the bearing stratum.",
+    )
     
     st.markdown("---")
     st.subheader("🏗️ Foundation Material")
@@ -217,6 +294,16 @@ with col_geom:
     st.markdown("---")
     st.subheader("💧 Groundwater Table")
     gw_active = st.checkbox("Enable Groundwater Table", value=False)
+    with st.expander("ℹ️ Groundwater modelling notes"):
+        st.markdown(
+            "| Water table position | Effect in this app |\n"
+            "| --- | --- |\n"
+            "| Above footing base | q uses submerged weight below water; γ′ = γ − 9.81 for soil-weight term |\n"
+            "| Within 2B′ below base | Full buoyant reduction assumed (conservative) |\n"
+            "| Deeper than 2B′ below base | No groundwater effect on γ′ |\n\n"
+            "For layered profiles or perched water, manual review may be required — "
+            "this tool assumes a single homogeneous layer."
+        )
     if gw_active:
         dw = st.number_input("Water Depth from Ground Surface (m)", min_value=0.0, value=0.4, step=0.1)
         gamma_w = 9.81
@@ -227,6 +314,15 @@ with col_geom:
     st.markdown("---")
     st.subheader("⛰️ Ground Inclination")
     slope_active = st.checkbox("Enable Ground Inclination", value=False)
+    with st.expander("ℹ️ Ground inclination limits (B1/VM2 Eq. 2.18–2.20)"):
+        st.markdown(
+            "- **Drained (φ′ > 0):** slope angle ω must not exceed φ′\n"
+            "- **Undrained (φ = 0):** ω must not exceed 45°\n"
+            "- **Distance D_E:** B1/VM2 ground-inclination factors apply when D_E < 2B (gross breadth)\n"
+            "- **Orientation:** If the slope is on the far (upslope) side of the footing, ground-inclination "
+            "factors may not apply — confirm slope orientation relative to the footing edge.\n"
+            "- Factors are applied only when slope direction matches the governing effective-width direction."
+        )
     if slope_active:
         slope_angle_deg = st.number_input(
             "Slope Angle Below Horizontal, β (degrees)",
@@ -234,14 +330,14 @@ with col_geom:
             max_value=45.0,
             value=10.0,
             step=1.0,
-            help="Ground surface inclination angle measured downward from horizontal.",
+            help="Ground surface inclination angle ω measured downward from horizontal (B1/VM2 notation).",
         )
         D_E = st.number_input(
             "Distance D_E to Slope Face (m)",
             min_value=0.0,
             value=2.0,
             step=0.1,
-            help="Horizontal distance from footing edge to slope face crest.",
+            help="Minimum horizontal distance from footing edge to downward slope face (B1/VM2 D_E).",
         )
         slope_direction = st.selectbox(
             "Slope Direction Relative to Footing",
@@ -255,6 +351,18 @@ with col_geom:
 
 with col_loads:
     st.header("🏋️ 3. Design Actions (ULS)")
+    with st.expander("ℹ️ How loads are used in this calculator"):
+        st.markdown(
+            "**Load flow:**\n"
+            "1. Structural engineer provides **V** (unfactored), **V*** (factored), **M***, and **H***\n"
+            "2. This app calculates **foundation self-weight** (you enter γ_f)\n"
+            "3. **Eccentricity** uses 0.9 × (V + foundation SW unfactored) with factored moments and H*\n"
+            "4. **Bearing capacity check** uses V* + factored foundation SW\n\n"
+            "**Important:**\n"
+            "- V and V* must be at the **footing base** (include load transfer above if applicable)\n"
+            "- V* is already factored by the structural engineer — **do not re-factor it**\n"
+            "- Unfactored horizontal loads (H) are for **reference only**; capacity uses factored H*"
+        )
     
     st.subheader("📥 Vertical Loads (from Structural Engineer)")
     V_unfactored = st.number_input(
@@ -262,26 +370,79 @@ with col_loads:
         min_value=0.0,
         value=300.0,
         step=10.0,
-        help="Unfactored vertical load provided by the structural engineer (typically 1.0G).",
+        help="Unfactored vertical load at footing base (typically 1.0G). Used for eccentricity (× 0.9).",
     )
-    V_factored = st.number_input("Factored Vertical Load, V* (kN)", min_value=0.0, value=400.0, step=10.0, help="Factored design load (already factored by structural engineer)")
+    V_factored = st.number_input(
+        "Factored Vertical Load, V* (kN)",
+        min_value=0.0,
+        value=400.0,
+        step=10.0,
+        help="Factored ULS load at footing base — already includes structural load factors. Do not re-factor.",
+    )
     
-    st.markdown("**Bending Moments (Factored - from Structural Engineer):**")
-    M_B_factored = st.number_input("Factored Moment about B-axis, M_B* (kN·m)", min_value=0.0, value=15.0, step=5.0, help="Factored moment at footing base")
+    st.markdown("**Bending Moments (Factored — from Structural Engineer):**")
+    st.caption(
+        "**M_B*** causes eccentricity in the B direction (reduces effective width B′). "
+        "**M_L*** causes eccentricity in the L direction (reduces L′). "
+        "Induced moments from H* × Df are added automatically."
+    )
+    M_B_factored = st.number_input("Factored Moment about B-axis, M_B* (kN·m)", min_value=0.0, value=15.0, step=5.0, help="Factored moment at footing base about the B axis")
     if footing_type == "Rectangular Pad":
-        M_L_factored = st.number_input("Factored Moment about L-axis, M_L* (kN·m)", min_value=0.0, value=10.0, step=5.0, help="Factored moment at footing base")
+        M_L_factored = st.number_input("Factored Moment about L-axis, M_L* (kN·m)", min_value=0.0, value=10.0, step=5.0, help="Factored moment at footing base about the L axis")
     else:
         M_L_factored = 0.0
 
-    st.markdown("**Lateral Loading - Parallel to Width (B):**")
-    H_unfactored_B = st.number_input("Unfactored Horizontal Load (B-direction), H (kN)", min_value=0.0, value=20.0, step=5.0, help="Unfactored horizontal load parallel to width")
-    H_factored_B = st.number_input("Factored Horizontal Load (B-direction), H* (kN)", min_value=0.0, value=35.0, step=5.0, help="Factored design horizontal load parallel to width")
+    st.markdown("**Lateral Loading — Parallel to Width (B):**")
+    st.caption("Unfactored H values are for reference only. Bearing capacity and eccentricity use **factored H***.")
+    H_unfactored_B = st.number_input(
+        "Unfactored Horizontal Load (B-direction), H (kN)",
+        min_value=0.0,
+        value=20.0,
+        step=5.0,
+        help="Reference only — not used in capacity calculation.",
+    )
+    H_factored_B = st.number_input(
+        "Factored Horizontal Load (B-direction), H* (kN)",
+        min_value=0.0,
+        value=35.0,
+        step=5.0,
+        help="Factored ULS horizontal load parallel to width — used in capacity and eccentricity.",
+    )
     
-    st.markdown("**Lateral Loading - Parallel to Length (L):**")
-    H_unfactored_L = st.number_input("Unfactored Horizontal Load (L-direction), H (kN)", min_value=0.0, value=0.0, step=5.0, help="Unfactored horizontal load parallel to length")
-    H_factored_L = st.number_input("Factored Horizontal Load (L-direction), H* (kN)", min_value=0.0, value=0.0, step=5.0, help="Factored design horizontal load parallel to length")
-    
-    phi_g = st.slider("Geotechnical Reduction Factor (𝜙_g)", min_value=0.40, max_value=0.90, value=0.50, step=0.05)
+    st.markdown("**Lateral Loading — Parallel to Length (L):**")
+    H_unfactored_L = st.number_input(
+        "Unfactored Horizontal Load (L-direction), H (kN)",
+        min_value=0.0,
+        value=0.0,
+        step=5.0,
+        help="Reference only — not used in capacity calculation.",
+    )
+    H_factored_L = st.number_input(
+        "Factored Horizontal Load (L-direction), H* (kN)",
+        min_value=0.0,
+        value=0.0,
+        step=5.0,
+        help="Factored ULS horizontal load parallel to length — used in capacity and eccentricity.",
+    )
+
+    with st.expander("ℹ️ Geotechnical reduction factor φ_g guidance (B1/VM2 Table 2.1)"):
+        st.info(
+            "**φ_g** is the bearing strength reduction factor (Φ_bc) applied as q_d = q_u × φ_g.\n\n"
+            "Select φ_g based on your governing ULS load combination and soil type per **B1/VM2 Table 2.1**. "
+            "Typical ranges:\n"
+            "- Static combinations on cohesive soils: ~0.45–0.55\n"
+            "- Static combinations on granular soils: ~0.40–0.50\n"
+            "- Earthquake/overstrength combinations: ~0.80–0.90\n\n"
+            "⚠️ Do not default to 0.50 without justification from your geotechnical investigation report."
+        )
+    phi_g = st.slider(
+        "Geotechnical Reduction Factor (φ_g / Φ_bc)",
+        min_value=0.40,
+        max_value=0.90,
+        value=0.50,
+        step=0.05,
+        help="Bearing strength reduction factor per B1/VM2 Table 2.1. Confirm against your load combination and soil type.",
+    )
 
 # --- B1/VM2 Computational Core Engine ---
 
@@ -335,6 +496,21 @@ if L_prime < B_prime:
         "Review footing orientation or perform a manual directional check."
     )
 
+depth_ratio = Df / B_prime if B_prime > 0 else 0.0
+if Df > 0 and depth_ratio > 1.0:
+    st.info(
+        f"ℹ️ **D_f/B′ = {depth_ratio:.2f} > 1** — depth factors use tan⁻¹(D_f/B′) per B1/VM2 Eq. 2.12–2.13."
+    )
+
+if slope_active and slope_angle_deg > 0:
+    if phi_deg == 0 and slope_angle_deg > 45.0:
+        st.error("❌ B1/VM2: For undrained analysis (φ = 0°), slope angle ω must not exceed 45°.")
+    elif phi_deg > 0 and slope_angle_deg > phi_deg:
+        st.error(f"❌ B1/VM2: For drained analysis, slope angle ω ({slope_angle_deg:.0f}°) must not exceed φ′ ({phi_deg:.0f}°).")
+    if D_E >= 2.0 * B_raw:
+        st.info(
+            f"ℹ️ **D_E = {D_E:.2f} m ≥ 2B = {2.0 * B_raw:.2f} m** — per B1/VM2, ground-inclination factors equal 1.0 when D_E ≥ 2B."
+        )
 
 # 5. Advanced Groundwater Surcharge Rules
 
@@ -416,7 +592,6 @@ else:
 if Df == 0:
     lambda_cd = lambda_qd = lambda_gammad = 1.0
 else:
-    depth_ratio = Df / B_prime
     depth_term = depth_ratio if depth_ratio <= 1.0 else np.arctan(depth_ratio)
 
     if phi_deg == 0:
@@ -469,10 +644,29 @@ q_factored = V_capacity_check / A_prime
 # CDR = Resistance / Demand = q_d / q_factored
 # CDR > 1.0 means design is adequate (resistance exceeds demand)
 CDR = qd / q_factored if q_factored > 0 else float('inf')
+cdr_margin_pct = (CDR - 1.0) * 100.0 if np.isfinite(CDR) else 0.0
+
+if qu > 0:
+    term1_pct = 100.0 * term1 / qu
+    term2_pct = 100.0 * term2 / qu
+    term3_pct = 100.0 * term3 / qu
+else:
+    term1_pct = term2_pct = term3_pct = 0.0
+
+if H_factored_B >= H_factored_L:
+    h_governing_reason = f"H_B* = {H_factored_B:.1f} kN ≥ H_L* = {H_factored_L:.1f} kN"
+else:
+    h_governing_reason = f"H_L* = {H_factored_L:.1f} kN > H_B* = {H_factored_B:.1f} kN"
+
+is_undrained = design_case == "Seismic / Short-Term (Undrained)"
 
 # --- Results Presentation Layer ---
 st.write("---")
 st.subheader("📊 Vertical Load Summary")
+st.caption(
+    "Two load assemblies are used: **V_eccentricity** (0.9 × unfactored) for Meyerhof effective dimensions, "
+    "and **V_capacity_check** (factored) for the ULS bearing pressure demand."
+)
 
 load_col1, load_col2, load_col3, load_col4 = st.columns(4)
 
@@ -505,6 +699,11 @@ with load_summary_col2:
 st.write("---")
 with st.expander("📋 Moment & Eccentricity Analysis (click to open)"):
     st.caption("📌 **NZS 1170.0 Table 4.2.1:** Eccentricity uses 0.9 × unfactored vertical load with factored horizontal load (worst-case overturning)")
+    st.info(
+        "**Middle-third check** (e ≤ B/6) is an eccentricity/serviceability limit. "
+        "**Meyerhof B′ = B − 2e** is the ULS bearing-capacity effective width. "
+        "A footing can pass one check and fail the other — review both independently."
+    )
 
     moment_col1, moment_col2, moment_col3 = st.columns(3)
 
@@ -538,21 +737,40 @@ with st.expander("📋 Moment & Eccentricity Analysis (click to open)"):
 
 st.write("---")
 st.subheader("🔍 Bearing Pressure Check (Ultimate Limit State)")
-st.caption("**Capacity Demand Ratio (CDR):** CDR = q_d / q = Resistance / Demand. **CDR ≥ 1.0 = ADEQUATE**")
+st.caption(
+    "**CDR = q_d / q** (Resistance / Demand). **CDR ≥ 1.0 = ADEQUATE.** "
+    f"Current margin: **{cdr_margin_pct:+.1f}%** relative to demand."
+)
+if is_undrained:
+    st.caption(
+        "**Governing undrained equation (B1/VM2 Eq. 2.2):** "
+        "q_u = S_u × N_c × λ_cs × λ_cd × λ_ci × λ_cg + q × λ_qg"
+    )
 
 pressure_col1, pressure_col2, pressure_col3 = st.columns(3)
 
 with pressure_col1:
-    st.metric(label="Factored Bearing Demand (q)", value=f"{q_factored:.1f} kPa", help=f"V_capacity / A' = {V_capacity_check:.1f} / {A_prime:.3f}")
+    st.metric(
+        label="Applied Bearing Demand (q)",
+        value=f"{q_factored:.1f} kPa",
+        help=f"Factored pressure on effective area: V_capacity_check / A′ = {V_capacity_check:.1f} / {A_prime:.3f}",
+    )
+    st.caption("Demand = factored vertical load ÷ effective area A′")
 
 with pressure_col2:
-    st.metric(label="Factored Bearing Resistance (q_d)", value=f"{qd:.1f} kPa", help=f"q_u × φ_g = {qu:.1f} × {phi_g:.2f}")
+    st.metric(
+        label="Allowable Bearing Resistance (q_d)",
+        value=f"{qd:.1f} kPa",
+        help=f"Design capacity: q_u × φ_g = {qu:.1f} × {phi_g:.2f}",
+    )
+    st.caption("Resistance = ultimate capacity q_u × φ_g")
 
 with pressure_col3:
     if CDR >= 1.0:
         st.metric(label="Capacity Demand Ratio (CDR)", value=f"{CDR:.2f}", delta="✅ ADEQUATE", delta_color="inverse")
     else:
         st.metric(label="Capacity Demand Ratio (CDR)", value=f"{CDR:.2f}", delta="❌ INADEQUATE", delta_color="off")
+    st.caption("Must be ≥ 1.0 for adequate bearing capacity")
 
 # Detailed bearing capacity result
 if CDR >= 1.0:
@@ -564,9 +782,28 @@ st.write("---")
 st.subheader("📊 Ultimate Geotechnical Capacity Results")
 
 res_col1, res_col2, res_col3 = st.columns(3)
-res_col1.metric(label="Ultimate Geotechnical Capacity (q_u)", value=f"{qu:.1f} kPa")
-res_col2.metric(label="Geotechnical Reduction Factor (𝜙_g)", value=f"{phi_g:.2f}")
-res_col3.metric(label="Design Geotechnical Capacity (q_d)", value=f"{qd:.1f} kPa")
+res_col1.metric(
+    label="Ultimate Geotechnical Capacity (q_u)",
+    value=f"{qu:.1f} kPa",
+    help="Sum of cohesion, surcharge, and soil-weight terms before φ_g reduction.",
+)
+res_col2.metric(
+    label="Geotechnical Reduction Factor (φ_g / Φ_bc)",
+    value=f"{phi_g:.2f}",
+    help="Bearing strength reduction factor per B1/VM2 Table 2.1.",
+)
+res_col3.metric(
+    label="Design Geotechnical Capacity (q_d)",
+    value=f"{qd:.1f} kPa",
+    help="Allowable bearing resistance = q_u × φ_g.",
+)
+
+st.markdown("**Capacity term contribution to q_u:**")
+term_col1, term_col2, term_col3 = st.columns(3)
+term_col1.metric("Cohesion term", f"{term1:.1f} kPa", f"{term1_pct:.0f}% of q_u")
+term_col2.metric("Surcharge term (q)", f"{term2:.1f} kPa", f"{term2_pct:.0f}% of q_u")
+term_col3.metric("Soil-weight term (γ′)", f"{term3:.1f} kPa", f"{term3_pct:.0f}% of q_u")
+st.caption("Percentage split identifies which term governs capacity for this footing.")
 
 pdf_input_rows = [
     ("Design Case", None),
@@ -617,31 +854,52 @@ else:
 pdf_output_rows = [
     ("Loads + Effective Area", None),
     ("Critical Horizontal Direction", h_direction),
+    ("Horizontal Direction Reason", h_governing_reason),
     ("V_eccentricity", f"{V_eccentricity:.2f} kN"),
     ("V_capacity_check", f"{V_capacity_check:.2f} kN"),
     ("Effective Width B'", f"{B_prime:.3f} m"),
     ("Effective Length L'", f"{L_prime:.3f} m"),
     ("Effective Area A'", f"{A_prime:.3f} m2"),
+    ("Df/B' Ratio", f"{depth_ratio:.3f}"),
     ("Capacity Check", None),
-    ("Factored Bearing Demand q", f"{q_factored:.2f} kPa"),
+    ("Applied Bearing Demand q", f"{q_factored:.2f} kPa"),
     ("Ultimate Geotechnical Capacity q_u", f"{qu:.2f} kPa"),
-    ("Design Geotechnical Capacity q_d", f"{qd:.2f} kPa"),
+    ("Allowable Bearing Resistance q_d", f"{qd:.2f} kPa"),
     ("Capacity Demand Ratio CDR", f"{CDR:.3f}"),
+    ("CDR Margin", f"{cdr_margin_pct:+.1f}%"),
     ("Bearing Capacity Status", "ADEQUATE" if CDR >= 1.0 else "INADEQUATE"),
+    ("Scope Note", "ULS bearing capacity only (B1/VM2 Sec 2.2)"),
 ]
 
 equation_rows = [
-    ("Cohesion Term", f"{term1:.2f} kPa"),
-    ("Surcharge Term", f"{term2:.2f} kPa"),
-    ("Soil Weight Term", f"{term3:.2f} kPa"),
+    ("Cohesion Term", f"{term1:.2f} kPa ({term1_pct:.0f}% of q_u)"),
+    ("Surcharge Term", f"{term2:.2f} kPa ({term2_pct:.0f}% of q_u)"),
+    ("Soil Weight Term", f"{term3:.2f} kPa ({term3_pct:.0f}% of q_u)"),
     ("Summed Ultimate Capacity q_u", f"{qu:.2f} kPa"),
     ("Design Verification", f"q_d = {qu:.2f} * {phi_g:.2f} = {qd:.2f} kPa"),
+    ("CDR Margin", f"{cdr_margin_pct:+.1f}%"),
+    ("Governing Horizontal Direction", f"{h_direction} ({h_governing_reason})"),
 ]
+
+if is_undrained:
+    governing_equation_latex = (
+        r"q_u = s_u \times N_c \times \lambda_{cs} \times \lambda_{cd} \times \lambda_{ic} \times \lambda_{cg}"
+        r" + q \times \lambda_{qg}"
+    )
+    governing_equation_note = "Undrained governing equation (B1/VM2 Eq. 2.2)"
+else:
+    governing_equation_latex = (
+        r"q_u = (c \times N_c \times \lambda_{cs} \times \lambda_{cd} \times \lambda_{ic} \times \lambda_{cg})"
+        r" + (q \times N_q \times \lambda_{qs} \times \lambda_{qd} \times \lambda_{iq} \times \lambda_{qg})"
+        r" + (0.5 \times \gamma' \times B' \times N_\gamma \times \lambda_{\gamma s} \times \lambda_{\gamma d}"
+        r" \times \lambda_{i\gamma} \times \lambda_{\gamma g})"
+    )
+    governing_equation_note = "Drained governing equation (B1/VM2 Eq. 2.1)"
 
 equation_latex_rows = [
     (
-        "Governing Ultimate Capacity Equation",
-        r"q_u = (c \times N_c \times \lambda_{cs} \times \lambda_{cd} \times \lambda_{ic} \times \lambda_{cg}) + (q \times N_q \times \lambda_{qs} \times \lambda_{qd} \times \lambda_{iq} \times \lambda_{qg}) + (0.5 \times \gamma' \times B' \times N_\gamma \times \lambda_{\gamma s} \times \lambda_{\gamma d} \times \lambda_{i\gamma} \times \lambda_{\gamma g})",
+        governing_equation_note,
+        governing_equation_latex,
     ),
     (
         "Expanded Equation with Calculated Values",
@@ -652,43 +910,43 @@ equation_latex_rows = [
 pdf_factor_rows = [
     (
         rf"N_c={Nc:.3f},\ N_q={Nq:.3f},\ N_\gamma={Ngamma:.3f}",
-        "Cohesion, surcharge, self-weight multipliers.",
+        "Bearing strength factors (B1/VM2 Eq. 2.6-2.8).",
     ),
     (
         rf"\lambda_{{cs}}={lambda_cs:.3f},\ \lambda_{{qs}}={lambda_qs:.3f},\ \lambda_{{\gamma s}}={lambda_gammas:.3f}",
-        "Shape factors.",
+        "Shape factors (B1/VM2 Eq. 2.9-2.11).",
     ),
     (
         rf"\lambda_{{cd}}={lambda_cd:.3f},\ \lambda_{{qd}}={lambda_qd:.3f},\ \lambda_{{\gamma d}}={lambda_gammad:.3f}",
-        "Depth factors.",
+        "Depth factors (B1/VM2 Eq. 2.12-2.14).",
     ),
     (
         rf"\lambda_{{ic}}={lambda_ic:.3f},\ \lambda_{{iq}}={lambda_iq:.3f},\ \lambda_{{i\gamma}}={lambda_igamma:.3f}",
-        "Inclination factors.",
+        "Load inclination factors (B1/VM2 Eq. 2.15-2.17).",
     ),
     (
         rf"\lambda_{{cg}}={lambda_cg:.3f},\ \lambda_{{qg}}={lambda_qg:.3f},\ \lambda_{{\gamma g}}={lambda_gammag:.3f}",
-        "Ground inclination factors.",
+        "Ground inclination factors (B1/VM2 Eq. 2.18-2.20).",
     ),
     (
         rf"m={exponent_m:.3f}",
-        "Load exponent.",
+        "Load inclination exponent m.",
     ),
 ]
 
 pdf_data = _build_pdf_report(pdf_input_rows, pdf_output_rows, pdf_factor_rows, equation_rows, equation_latex_rows)
 
 with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-by-Step Multiplication)"):
-    st.markdown("**Governing Ultimate Capacity Equation ($q_u$):**")
-    st.latex(r"q_u = (c \times N_c \times \lambda_{cs} \times \lambda_{cd} \times \lambda_{ic} \times \lambda_{cg}) + (q \times N_q \times \lambda_{qs} \times \lambda_{qd} \times \lambda_{iq} \times \lambda_{qg}) + (0.5 \times \gamma' \times B' \times N_\gamma \times \lambda_{\gamma s} \times \lambda_{\gamma d} \times \lambda_{i\gamma} \times \lambda_{\gamma g})")
+    st.markdown(f"**Governing Ultimate Capacity Equation ($q_u$) — {governing_equation_note}:**")
+    st.latex(governing_equation_latex)
     
     st.markdown("**Your Values Multiplied Out:**")
     st.latex(rf"q_u = ({c_calc:.2f}\ \text{{×}}\ {Nc:.2f}\ \text{{×}}\ {lambda_cs:.2f}\ \text{{×}}\ {lambda_cd:.2f}\ \text{{×}}\ {lambda_ic:.2f}\ \text{{×}}\ {lambda_cg:.2f}) + ({q_surcharge:.2f}\ \text{{×}}\ {Nq:.2f}\ \text{{×}}\ {lambda_qs:.2f}\ \text{{×}}\ {lambda_qd:.2f}\ \text{{×}}\ {lambda_iq:.2f}\ \text{{×}}\ {lambda_qg:.2f}) + (0.5\ \text{{×}}\ {gamma_prime:.2f}\ \text{{×}}\ {B_prime:.2f}\ \text{{×}}\ {Ngamma:.2f}\ \text{{×}}\ {lambda_gammas:.2f}\ \text{{×}}\ {lambda_gammad:.2f}\ \text{{×}}\ {lambda_igamma:.2f}\ \text{{×}}\ {lambda_gammag:.2f})")
     
     st.markdown("**Calculated Partial Terms:**")
-    st.write(f"*   **Cohesion Term:** {term1:.2f} kPa")
-    st.write(f"*   **Surcharge Term ($q$):** {term2:.2f} kPa")
-    st.write(f"*   **Soil Weight Term ($\gamma'$):** {term3:.2f} kPa")
+    st.write(f"*   **Cohesion Term:** {term1:.2f} kPa ({term1_pct:.0f}% of q_u)")
+    st.write(f"*   **Surcharge Term ($q$):** {term2:.2f} kPa ({term2_pct:.0f}% of q_u)")
+    st.write(f"*   **Soil Weight Term ($\gamma'$):** {term3:.2f} kPa ({term3_pct:.0f}% of q_u)")
     st.write(f"🚀 **Summed Ultimate Capacity ($q_u$):** {qu:.2f} kPa")
     
     st.markdown("**Design Capacity Verification ($q_d$):**")
@@ -697,36 +955,41 @@ with st.expander("📝 Click to View Full Calculation Equation Expansion (Step-b
 # Consolidated Structural Audit Panel
 st.write("---")
 st.subheader("📊 Bearing Capacity Factors")
+st.caption("B1/VM2 equation references: N (Eq. 2.6–2.8) · Shape λ (Eq. 2.9–2.11) · Depth λ (Eq. 2.12–2.14) · Inclination λ (Eq. 2.15–2.17) · Ground λ (Eq. 2.18–2.20)")
 audit_col1, audit_col2, audit_col3 = st.columns(3)
 
 with audit_col1:
-    st.markdown("**Classical Factors ($N$):**")
+    st.markdown("**Classical Factors ($N$) — B1/VM2 Eq. 2.6–2.8:**")
     st.write(f"*   **$N_c$ (Cohesion Multiplier):** {Nc:.3f}")
     st.write(f"*   **$N_q$ (Surcharge Multiplier):** {Nq:.3f}")
     st.write(f"*   **$N_\gamma$ (Self-Weight Multiplier):** {Ngamma:.3f}")
     
     st.markdown("**Horizontal Loads Summary:**")
-    st.write(f"*   **H_B (factored):** {H_factored_B:.2f} kN")
-    st.write(f"*   **H_L (factored):** {H_factored_L:.2f} kN")
-    st.write(f"*   **Critical direction:** {h_direction}")
+    st.write(f"*   **H_B* (factored):** {H_factored_B:.2f} kN")
+    st.write(f"*   **H_L* (factored):** {H_factored_L:.2f} kN")
+    st.write(f"*   **Governing direction:** {h_direction}")
+    st.write(f"*   **Reason:** {h_governing_reason}")
     st.write(f"*   **Lever Arm (D_f):** {Df:.2f} m")
+    st.caption("Load inclination factors (λ_i) are applied in the governing direction only.")
 
 with audit_col2:
-    st.markdown("**Geometry Modifying Factors ($\lambda$):**")
+    st.markdown("**Geometry Modifying Factors ($\lambda$) — Eq. 2.9–2.14:**")
     st.write(rf"*   $\lambda_{{cs}}$ (Cohesion Shape): {lambda_cs:.3f}")
     st.write(rf"*   $\lambda_{{qs}}$ (Surcharge Shape): {lambda_qs:.3f}")
-    st.write(rf"*   $\lambda_{{\gamma s}}$ (Soil Weight Modifier): {lambda_gammas:.3f}")
+    st.write(rf"*   $\lambda_{{\gamma s}}$ (Soil Weight Shape): {lambda_gammas:.3f}")
     st.write(rf"*   $\lambda_{{cd}}$ (Cohesion Depth): {lambda_cd:.3f}")
     st.write(rf"*   $\lambda_{{qd}}$ (Surcharge Depth): {lambda_qd:.3f}")
     st.write(rf"*   $\lambda_{{\gamma d}}$ (Weight Depth): {lambda_gammad:.3f}")
+    if Df > 0:
+        st.write(f"*   **D_f/B′ ratio:** {depth_ratio:.3f}" + (" (tan⁻¹ applied)" if depth_ratio > 1.0 else ""))
 
 with audit_col3:
-    st.markdown("**Load Inclination Factors ($\lambda_i$):**")
+    st.markdown("**Load Inclination Factors ($\lambda_i$) — Eq. 2.15–2.17:**")
     st.write(f"*   Load Exponent ($m$): {exponent_m:.3f}")
     st.write(rf"*   $\lambda_{{ic}}$ (Cohesion Inclination): {lambda_ic:.3f}")
     st.write(rf"*   $\lambda_{{iq}}$ (Surcharge Inclination): {lambda_iq:.3f}")
     st.write(rf"*   $\lambda_{{i\gamma}}$ (Weight Inclination): {lambda_igamma:.3f}")
-    st.markdown("**Ground Inclination Factors ($\lambda_g$):**")
+    st.markdown("**Ground Inclination Factors ($\lambda_g$) — Eq. 2.18–2.20:**")
     st.write(rf"*   $\lambda_{{cg}}$ (Cohesion Ground): {lambda_cg:.3f}")
     st.write(rf"*   $\lambda_{{qg}}$ (Surcharge Ground): {lambda_qg:.3f}")
     st.write(rf"*   $\lambda_{{\gamma g}}$ (Weight Ground): {lambda_gammag:.3f}")
@@ -740,6 +1003,12 @@ st.download_button(
     data=pdf_data,
     file_name="b1_vm2_bearing_capacity_report.pdf",
     mime="application/pdf",
+)
+
+st.markdown("---")
+st.caption(
+    "**Scope reminder:** ULS bearing capacity only (B1/VM2 §2.2). Sliding (§2.3), settlement, liquefaction, "
+    "and deep foundations are not checked. Results require review by a competent geotechnical engineer."
 )
 
 
