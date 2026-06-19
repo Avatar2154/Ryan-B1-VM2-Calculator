@@ -177,17 +177,29 @@ with col_case:
     st.header("⏳ 1. Design Case & Soil")
     with st.expander("ℹ️ Which design case should I use?"):
         st.markdown(
+            "This selector chooses the **soil strength model**, not the structural load type. "
+            "The key question is whether **drained** (c′, φ′) or **undrained** (Su, ϕ = 0°) strength "
+            "governs at the time of failure.\n\n"
             "| Case | When to use | Soil parameters |\n"
             "| --- | --- | --- |\n"
-            "| **Static (drained)** | Permanent/long-term ULS, wind, non-seismic combinations | c′, φ′ from effective-stress lab testing |\n"
-            "| **Seismic / short-term (undrained)** | Earthquake ULS, rapid loading on clay | Su from UU triaxial, field vane, or CPT correlation |\n\n"
+            "| **Static (drained)** | Permanent/sustained ULS where pore pressures can dissipate; "
+            "**all granular soils regardless of load duration** | c′, φ′ from effective-stress lab testing |\n"
+            "| **Seismic / short-term (undrained)** | Earthquake ULS; **wind and other rapid/transient ULS on cohesive soils** "
+            "where undrained strength governs | Su from UU triaxial, field vane, or CPT correlation |\n\n"
+            "**Wind on sand/gravel:** use drained (c′ = 0, φ′) — granular soils do not have a meaningful "
+            "undrained bearing model in this method.\n\n"
+            "**Wind on clay:** use short-term/undrained (Su) — wind is a transient action and undrained "
+            "strength typically governs.\n\n"
             "Do **not** mix drained and undrained parameters in the same run — B1/VM2 treats these "
             "as separate analysis paths (Subsection 2.2.2)."
         )
     design_case = st.selectbox(
         "Design Load Case", 
         ["Static (Long-Term / Drained)", "Seismic / Short-Term (Undrained)"],
-        help="Seismic and short-term cases use undrained analysis (Su). Static cases use drained parameters (c', phi')."
+        help=(
+            "Drained: c′, φ′ — permanent/sustained ULS and all granular soils. "
+            "Undrained: Su — earthquake ULS and rapid/transient ULS (e.g. wind) on cohesive soils."
+        ),
     )
     
     st.markdown("---")
