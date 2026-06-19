@@ -412,16 +412,19 @@ else:
     lambda_gammas = max(0.6, 1.0 - 0.4 * (B_prime / L_prime))
 
 
-# 9. Foundation Embedment Depth Modifiers
+# 9. Foundation Embedment Depth Modifiers (B1/VM2 Eq. 2.12–2.14)
 if Df == 0:
     lambda_cd = lambda_qd = lambda_gammad = 1.0
 else:
+    depth_ratio = Df / B_prime
+    depth_term = depth_ratio if depth_ratio <= 1.0 else np.arctan(depth_ratio)
+
     if phi_deg == 0:
-        lambda_cd = 1.0 + 0.4 * (Df / B_prime)
+        lambda_cd = 1.0 + 0.4 * depth_term
         lambda_qd = 1.0
     else:
-        lambda_qd = 1.0 + 2.0 * np.tan(phi_rad) * ((1.0 - np.sin(phi_rad))**2) * (Df / B_prime)
-        lambda_cd = lambda_qd - (1.0 - lambda_qd) / (Nc * np.tan(phi_rad))
+        lambda_qd = 1.0 + 2.0 * np.tan(phi_rad) * ((1.0 - np.sin(phi_rad))**2) * depth_term
+        lambda_cd = lambda_qd - (1.0 - lambda_qd) / (Nq * np.tan(phi_rad))
     lambda_gammad = 1.0
 
 # 10. Ground Inclination Modifiers
