@@ -662,10 +662,11 @@ is_undrained = design_case == "Seismic / Short-Term (Undrained)"
 
 # --- Results Presentation Layer ---
 st.write("---")
-st.subheader("📊 Vertical Load Summary")
+st.subheader("📊 Load Summary")
 st.caption(
-    "Two load assemblies are used: **V_eccentricity** (0.9 × unfactored) for Meyerhof effective dimensions, "
-    "and **V_capacity_check** (factored) for the ULS bearing pressure demand."
+    "Vertical loads: **V_eccentricity** (0.9 × unfactored) drives Meyerhof effective dimensions; "
+    "**V_capacity_check** (factored) drives ULS bearing demand. "
+    "Horizontal loads: factored **H*** governs eccentricity, load inclination (λ_i), and the critical direction check."
 )
 
 load_col1, load_col2, load_col3, load_col4 = st.columns(4)
@@ -695,6 +696,27 @@ with load_summary_col2:
     st.write(f"*   V_struct (factored): {V_factored:.2f} kN")
     st.write(f"*   V_foundation (factored): {V_foundation_factored:.2f} kN")
     st.write(f"*   **V_capacity_check: {V_capacity_check:.2f} kN**")
+
+st.markdown("**Horizontal Loads (Factored — used in eccentricity & λ_i):**")
+h_col1, h_col2, h_col3 = st.columns(3)
+
+with h_col1:
+    st.metric("H_B* (parallel to width)", f"{H_factored_B:.1f} kN")
+
+with h_col2:
+    st.metric("H_L* (parallel to length)", f"{H_factored_L:.1f} kN")
+
+with h_col3:
+    st.metric(
+        "Governing H* for λ_i",
+        f"{H_factored_critical:.1f} kN",
+        help=f"{h_governing_reason}. Load inclination factors apply in this direction.",
+    )
+
+st.write(
+    f"*   **Governing direction:** {h_direction} ({h_governing_reason})\n"
+    f"*   **Induced moment lever arm:** D_f = {Df:.2f} m (M_induced = H* × D_f)"
+)
 
 st.write("---")
 with st.expander("📋 Moment & Eccentricity Analysis (click to open)"):
@@ -963,14 +985,6 @@ with audit_col1:
     st.write(f"*   **$N_c$ (Cohesion Multiplier):** {Nc:.3f}")
     st.write(f"*   **$N_q$ (Surcharge Multiplier):** {Nq:.3f}")
     st.write(f"*   **$N_\gamma$ (Self-Weight Multiplier):** {Ngamma:.3f}")
-    
-    st.markdown("**Horizontal Loads Summary:**")
-    st.write(f"*   **H_B* (factored):** {H_factored_B:.2f} kN")
-    st.write(f"*   **H_L* (factored):** {H_factored_L:.2f} kN")
-    st.write(f"*   **Governing direction:** {h_direction}")
-    st.write(f"*   **Reason:** {h_governing_reason}")
-    st.write(f"*   **Lever Arm (D_f):** {Df:.2f} m")
-    st.caption("Load inclination factors (λ_i) are applied in the governing direction only.")
 
 with audit_col2:
     st.markdown("**Geometry Modifying Factors ($\lambda$) — Eq. 2.9–2.14:**")
@@ -985,6 +999,7 @@ with audit_col2:
 
 with audit_col3:
     st.markdown("**Load Inclination Factors ($\lambda_i$) — Eq. 2.15–2.17:**")
+    st.caption(f"Based on governing H* = {H_factored_critical:.1f} kN ({h_direction}) — see Load Summary above.")
     st.write(f"*   Load Exponent ($m$): {exponent_m:.3f}")
     st.write(rf"*   $\lambda_{{ic}}$ (Cohesion Inclination): {lambda_ic:.3f}")
     st.write(rf"*   $\lambda_{{iq}}$ (Surcharge Inclination): {lambda_iq:.3f}")
